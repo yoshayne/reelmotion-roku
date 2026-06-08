@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="SettingsScreen" extends="Group">
+  <interface>
+    <field id="close" type="boolean" alwaysNotify="true" />
+    <field id="signedOut" type="boolean" alwaysNotify="true" />
+    <field id="userData" type="assocarray" />
+    <field id="subscriptionActive" type="boolean" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/screens/SettingsScreen.brs" />
+  <children>
+    <Rectangle id="bg" color="#000000" width="1280" height="720" />
+    <Poster id="logo" uri="pkg:/images/logo.png" width="280" height="80" translation="[500, 80]" />
+    <!-- Member card -->
+    <Rectangle id="memberCard" color="#111111" width="600" height="160" translation="[340, 220]" />
+    <Label id="nameLabel" color="#FFFFFF" font="font:MediumBoldSystemFont" horizAlign="center" width="600" translation="[340, 250]" />
+    <Label id="statusLabel" color="#22C55E" font="font:SmallSystemFont" horizAlign="center" width="600" translation="[340, 310]" />
+    <Label id="joinLabel" text="Subscribe at reelmotionapp.com" color="#DC2626" font="font:SmallestSystemFont" horizAlign="center" width="600" translation="[340, 345]" visible="false" />
+    <!-- Buttons -->
+    <Button id="signOutBtn" text="Sign Out" translation="[490, 420]" minWidth="300" />
+    <Button id="guidelinesBtn" text="Community Guidelines" translation="[420, 490]" minWidth="440" />
+    <!-- Guidelines overlay -->
+    <Rectangle id="guidelinesOverlay" color="#000000" opacity="0.95" width="1280" height="720" visible="false" />
+    <Label id="guidelinesText" color="#FFFFFF" font="font:SmallSystemFont" translation="[140, 100]" width="1000" height="520" wrap="true" visible="false" text="Community Guidelines&#xA;&#xA;ReelMotion is a community for independent film lovers. Please be respectful, constructive, and kind. Harassment, hate speech, and spam will not be tolerated. Share your passion for independent cinema and help grow our community." />
+    <Button id="closeGuidelinesBtn" text="Close" translation="[560, 640]" visible="false" />
+  </children>
+</component>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="HomeScreen" extends="Group">
+  <interface>
+    <field id="close" type="boolean" alwaysNotify="true" />
+    <field id="selectedItem" type="node" alwaysNotify="true" />
+    <field id="goSettings" type="boolean" alwaysNotify="true" />
+    <field id="authToken" type="string" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/screens/HomeScreen.brs" />
+  <children>
+    <Rectangle id="bg" color="#000000" width="1280" height="720" />
+    <!-- Nav bar -->
+    <Rectangle id="navBar" color="#111111" width="1280" height="70" translation="[0, 0]" />
+    <Poster id="navLogo" uri="pkg:/images/logo.png" width="160" height="45" translation="[60, 12]" />
+    <Label id="navHome" text="Home" color="#DC2626" font="font:SmallBoldSystemFont" translation="[880, 25]" />
+    <Label id="navMyList" text="My List" color="#9CA3AF" font="font:SmallSystemFont" translation="[960, 25]" />
+    <Label id="navSettings" text="Settings" color="#9CA3AF" font="font:SmallSystemFont" translation="[1060, 25]" />
+    <!-- Content rows -->
+    <RowList id="rowList" translation="[0, 75]" itemSize="[190, 300]" itemSpacing="[16, 0]" rowLabelOffset="[60, 0]" numRows="3" />
+    <!-- Loading -->
+    <BusySpinner id="spinner" translation="[610, 360]" visible="true" />
+    <!-- Error -->
+    <Label id="errorLabel" text="" color="#DC2626" font="font:SmallSystemFont" horizAlign="center" width="1280" translation="[0, 360]" visible="false" />
+  </children>
+</component>

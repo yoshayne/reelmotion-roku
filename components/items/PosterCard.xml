@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="PosterCard" extends="Group">
+  <interface>
+    <field id="itemContent" type="node" alwaysNotify="true" />
+    <field id="focusPercent" type="float" alwaysNotify="true" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/items/PosterCard.brs" />
+  <children>
+    <Rectangle id="cardBg" color="#111111" width="190" height="280" />
+    <Poster id="poster" width="190" height="240" loadingBitmapUri="pkg:/images/logo.png" />
+    <Label id="titleLabel" color="#FFFFFF" font="font:SmallestSystemFont" width="190" height="40" translation="[0, 242]" wrap="true" />
+    <Rectangle id="focusBorder" color="#DC2626" width="190" height="280" opacity="0" />
+  </children>
+</component>

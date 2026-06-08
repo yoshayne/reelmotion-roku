@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="PlayerScreen" extends="Group">
+  <interface>
+    <field id="close" type="boolean" alwaysNotify="true" />
+    <field id="videoData" type="assocarray" alwaysNotify="true" />
+    <field id="authToken" type="string" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/screens/PlayerScreen.brs" />
+  <children>
+    <Video id="video" width="1280" height="720" translation="[0, 0]" />
+    <!-- Loading overlay -->
+    <Rectangle id="loadingBg" color="#000000" width="1280" height="720" visible="true" />
+    <Poster id="loadingLogo" uri="pkg:/images/logo.png" width="280" height="80" translation="[500, 290]" visible="true" />
+    <BusySpinner id="loadingSpinner" translation="[610, 420]" visible="true" />
+    <!-- Skip intro button -->
+    <Button id="skipIntroBtn" text="Skip Intro" translation="[1050, 620]" visible="false" />
+    <!-- Error overlay -->
+    <Rectangle id="errorBg" color="#000000" width="1280" height="720" visible="false" />
+    <Label id="errorLabel" text="" color="#FFFFFF" font="font:SmallSystemFont" horizAlign="center" width="1280" translation="[0, 320]" visible="false" />
+    <Button id="retryBtn" text="Try Again" translation="[530, 380]" visible="false" />
+  </children>
+</component>
