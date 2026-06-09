@@ -98,13 +98,6 @@ sub stopPolling()
     end if
 end sub
 
-sub stopPolling()
-    if m.pollTask <> invalid
-        m.pollTask.control = "STOP"
-        m.pollTask = invalid
-    end if
-end sub
-
 sub showError(msg as String)
     appendDebugLog("ActivationScreen ERROR: " + msg)
 
