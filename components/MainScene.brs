@@ -8,9 +8,13 @@ sub init()
     m.settingsScreen = invalid
     m.playerScreen = invalid
 
+    m.verifyTask = CreateObject("roSGNode", "HttpTask")
+    m.verifyTask.observeField("response", "onVerifyResponse")
+
     if m.storedToken <> invalid and m.storedToken <> ""
         print "MainScene: session token found, showing home screen"
         showHomeScreen()
+        verifyToken(m.storedToken)
     else
         print "MainScene: no session token found, showing activation screen"
         showActivationScreen()
@@ -72,6 +76,45 @@ sub onActivationComplete()
     print "MainScene: activation complete, navigating to home"
     m.storedToken = token
     showHomeScreen()
+    verifyToken(token)
+end sub
+
+sub verifyToken(token as String)
+    m.verifyTask.request = {
+        url: "https://reelmotionapp.com/api/auth/device/verify",
+        method: "GET",
+        headers: {Authorization: "Bearer " + token},
+        body: "",
+        context: "verify"
+    }
+end sub
+
+sub onVerifyResponse()
+    resp = m.verifyTask.response
+    if resp = invalid then return
+    if resp.context <> "verify" then return
+
+    if resp.code = 200
+        json = ParseJson(resp.content)
+        if json <> invalid
+            if json.subscription_active <> invalid
+                m.subscriptionActive = (json.subscription_active = true)
+                print "MainScene: subscription_active = " + (m.subscriptionActive).toStr()
+                ' Update settings screen if open
+                if m.settingsScreen <> invalid
+                    m.settingsScreen.subscriptionActive = m.subscriptionActive
+                end if
+            end if
+            if json.user <> invalid
+                m.userData = json.user
+                if m.settingsScreen <> invalid
+                    m.settingsScreen.userData = m.userData
+                end if
+            end if
+        end if
+    else
+        print "MainScene: verify failed with code " + str(resp.code)
+    end if
 end sub
 
 sub onActivationClose()
