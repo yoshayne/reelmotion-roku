@@ -9,8 +9,6 @@ sub init()
     m.deviceToken = ""
     m.pollTask = invalid
 
-    m.top.findNode("retryButton").observeField("buttonSelected", "onRetrySelected")
-
     requestCode()
 end sub
 
@@ -122,8 +120,12 @@ sub onRetrySelected()
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
-    if press and key = "back"
-        return false
+    if press and key = "OK"
+        retryBtn = m.top.findNode("retryButton")
+        if retryBtn <> invalid and retryBtn.visible = true
+            onRetrySelected()
+            return true
+        end if
     end if
     return false
 end function

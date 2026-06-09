@@ -1,18 +1,25 @@
 sub init()
-    m.httpTask = CreateObject("roSGNode", "HttpTask")
-    m.httpTask.observeField("response", "onHttpResponse")
+    m.top.width = 1280
+    m.top.height = 720
+    m.top.color = "0x000000FF"
 
-    m.video = m.top.findNode("video")
+    ' Create Video node dynamically (cannot be in static XML for Group/Rectangle components)
+    m.video = CreateObject("roSGNode", "Video")
+    m.video.width = 1280
+    m.video.height = 720
+    m.video.translation = [0, 0]
     m.video.observeField("state", "onVideoState")
     m.video.observeField("position", "onVideoPosition")
+    m.top.insertChild(m.video, 0)
 
-    m.top.findNode("skipIntroBtn").observeField("buttonSelected", "onSkipIntro")
-    m.top.findNode("retryBtn").observeField("buttonSelected", "onRetry")
+    m.httpTask = CreateObject("roSGNode", "HttpTask")
+    m.httpTask.observeField("response", "onHttpResponse")
 
     m.introEndSeconds = 0
     m.showingIntro = false
     m.videoId = ""
     m.lastPosition = 0
+    m.focusedBtn = "none"
 
     m.top.observeField("videoData", "onVideoData")
 end sub
@@ -37,22 +44,27 @@ sub onVideoData()
     end if
 
     m.introEndSeconds = 0
+    m.showingIntro = false
     if data.intro_end_seconds <> invalid
         m.introEndSeconds = data.intro_end_seconds
-        m.showingIntro = true
+        m.showingIntro = (m.introEndSeconds > 0)
     end if
 
     showLoadingOverlay(true)
+    hideError()
 
     hlsUrl = "https://stream.mux.com/" + muxId + ".m3u8"
 
     content = CreateObject("roSGNode", "ContentNode")
     content.url = hlsUrl
     content.streamFormat = "hls"
-    content.title = data.title
+    if data.title <> invalid
+        content.title = data.title
+    end if
 
     m.video.content = content
     m.video.control = "play"
+    m.video.setFocus(true)
 end sub
 
 sub onVideoState()
@@ -60,10 +72,9 @@ sub onVideoState()
     if state = "playing"
         showLoadingOverlay(false)
         hideError()
+        m.video.setFocus(true)
     else if state = "buffering"
         showLoadingOverlay(true)
-    else if state = "stopped"
-        ' Video ended or stopped
     else if state = "error"
         showLoadingOverlay(false)
         showError("Playback error. Please try again.")
@@ -75,24 +86,14 @@ sub onVideoPosition()
     m.lastPosition = pos
 
     if m.showingIntro and m.introEndSeconds > 0
+        skipBtn = m.top.findNode("skipIntroBtn")
         if pos < m.introEndSeconds
-            m.top.findNode("skipIntroBtn").visible = true
+            skipBtn.visible = true
         else
-            m.top.findNode("skipIntroBtn").visible = false
+            skipBtn.visible = false
             m.showingIntro = false
         end if
     end if
-end sub
-
-sub onSkipIntro()
-    m.video.seek = m.introEndSeconds
-    m.top.findNode("skipIntroBtn").visible = false
-    m.showingIntro = false
-end sub
-
-sub onRetry()
-    hideError()
-    onVideoData()
 end sub
 
 sub showLoadingOverlay(show as Boolean)
@@ -103,11 +104,13 @@ end sub
 
 sub showError(msg as String)
     showLoadingOverlay(false)
+    m.video.control = "stop"
     m.top.findNode("errorBg").visible = true
     m.top.findNode("errorLabel").text = msg
     m.top.findNode("errorLabel").visible = true
     m.top.findNode("retryBtn").visible = true
     m.top.findNode("retryBtn").setFocus(true)
+    m.focusedBtn = "retry"
 end sub
 
 sub hideError()
@@ -137,7 +140,7 @@ sub savePlaybackHistory()
 end sub
 
 sub onHttpResponse()
-    ' Playback history response - nothing to do on success
+    ' Playback history POST response — nothing required on success
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
@@ -148,10 +151,31 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
             m.top.close = true
             return true
         end if
+
         if key = "OK"
             skipBtn = m.top.findNode("skipIntroBtn")
-            if skipBtn.visible = true and skipBtn.hasFocus()
-                onSkipIntro()
+            if skipBtn.visible = true and m.focusedBtn = "skip"
+                m.video.seek = m.introEndSeconds
+                skipBtn.visible = false
+                m.showingIntro = false
+                m.video.setFocus(true)
+                m.focusedBtn = "none"
+                return true
+            end if
+
+            retryBtn = m.top.findNode("retryBtn")
+            if retryBtn.visible = true
+                hideError()
+                onVideoData()
+                return true
+            end if
+        end if
+
+        ' Allow remote D-pad to focus skip intro button when visible
+        if key = "down"
+            skipBtn = m.top.findNode("skipIntroBtn")
+            if skipBtn.visible = true
+                m.focusedBtn = "skip"
                 return true
             end if
         end if
