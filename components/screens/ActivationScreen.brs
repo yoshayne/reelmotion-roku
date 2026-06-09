@@ -1,78 +1,46 @@
 sub init()
-    m.httpTask = CreateObject("roSGNode", "HttpTask")
-    m.httpTask.observeField("response", "onHttpResponse")
-
     m.registryTask = CreateObject("roSGNode", "RegistryTask")
     m.registryTask.control = "RUN"
 
-    m.pendingRequest = ""
+    m.activationTask = invalid
     m.deviceToken = ""
     m.pollTask = invalid
 
-    connectivityTest()
     requestCode()
 end sub
 
-sub connectivityTest()
-    print "ActivationScreen: running connectivity test to https://reelmotionapp.com"
-    m.httpTask.request = {
-        url: "https://reelmotionapp.com",
-        method: "GET",
-        headers: {},
-        body: "",
-        context: "connectivityTest"
-    }
-end sub
-
 sub requestCode()
-    ' Reset UI
     m.top.findNode("codeLabel").text = ""
     m.top.findNode("errorLabel").visible = false
     m.top.findNode("retryButton").visible = false
     m.top.findNode("spinner").visible = true
     m.top.findNode("instrLabel").text = "Requesting activation code..."
 
-    m.pendingRequest = "requestCode"
-    m.httpTask.request = {
-        url: "https://reelmotionapp.com/api/auth/device/request-code",
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: "{}",
-        context: "requestCode"
-    }
+    if m.activationTask <> invalid
+        m.activationTask = invalid
+    end if
+
+    m.activationTask = CreateObject("roSGNode", "ActivationTask")
+    m.activationTask.observeField("done", "onActivationDone")
+    m.activationTask.control = "RUN"
 end sub
 
-sub onHttpResponse()
-    resp = m.httpTask.response
-    if resp = invalid then
-        showError("Network error. Please try again.")
-        return
-    end if
+sub onActivationDone()
+    if m.activationTask = invalid then return
 
-    context = resp.context
+    code = m.activationTask.responseCode
+    json = m.activationTask.responseJson
 
-    if context = "connectivityTest"
-        print "ActivationScreen: connectivity test response code = " + str(resp.code)
-        print "ActivationScreen: connectivity test body = " + resp.content
-        requestCode()
-        return
-    end if
+    print "ActivationScreen: task done, HTTP code = " + str(code)
 
-    if context = "requestCode"
-        if resp.code = 200
-            json = ParseJson(resp.content)
-            if json <> invalid and json.code <> invalid
-                m.deviceToken = json.device_token
-                m.top.findNode("codeLabel").text = json.code
-                m.top.findNode("instrLabel").text = "Go to reelmotionapp.com/activate on your phone or computer and enter this code"
-                m.top.findNode("spinner").visible = false
-                startPolling()
-            else
-                showError("Invalid response from server. Please try again.")
-            end if
-        else
-            showError("Could not get activation code (Error " + str(resp.code).trim() + "). Please try again.")
-        end if
+    if code = 200 and json <> invalid and json.code <> invalid
+        m.deviceToken = json.device_token
+        m.top.findNode("codeLabel").text = json.code
+        m.top.findNode("instrLabel").text = "Go to reelmotionapp.com/activate on your phone or computer and enter this code"
+        m.top.findNode("spinner").visible = false
+        startPolling()
+    else
+        showError("Error: HTTP " + str(code).trim() + " — could not get activation code. Tap to retry.")
     end if
 end sub
 
@@ -99,7 +67,7 @@ sub onPollStatus()
             saveToken(sessionToken)
         end if
     else if status = "expired"
-        showError("Code expired. Please get a new code.")
+        showError("Code expired. Press OK to get a new code.")
     end if
 end sub
 
@@ -130,19 +98,15 @@ sub showError(msg as String)
     m.top.findNode("retryButton").setFocus(true)
 end sub
 
-sub onRetrySelected()
-    if m.pollTask <> invalid
-        m.pollTask.active = false
-        m.pollTask = invalid
-    end if
-    requestCode()
-end sub
-
 function onKeyEvent(key as String, press as Boolean) as Boolean
     if press and key = "OK"
         retryBtn = m.top.findNode("retryButton")
         if retryBtn <> invalid and retryBtn.visible = true
-            onRetrySelected()
+            if m.pollTask <> invalid
+                m.pollTask.active = false
+                m.pollTask = invalid
+            end if
+            requestCode()
             return true
         end if
     end if
