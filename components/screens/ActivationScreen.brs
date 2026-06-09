@@ -22,12 +22,15 @@ sub requestCode()
     end if
 
     m.activationTask = CreateObject("roSGNode", "ActivationTask")
-    m.activationTask.observeField("done", "onActivationDone")
+    m.activationTask.observeField("result", "onActivationResult")
     m.activationTask.control = "RUN"
 end sub
 
-sub onActivationDone()
+sub onActivationResult()
     if m.activationTask = invalid then return
+
+    result = m.activationTask.result
+    if result = invalid or result = "" then return
 
     code = m.activationTask.responseCode
     json = m.activationTask.responseJson
@@ -35,7 +38,7 @@ sub onActivationDone()
     print "ActivationScreen: task done, HTTP code = " + str(code)
     appendDebugLog("ActivationScreen: activation code HTTP " + str(code).trim())
 
-    if code = 200 and json <> invalid and json.code <> invalid
+    if result = "success" and json <> invalid and json.code <> invalid and json.device_token <> invalid
         m.deviceToken = json.device_token
         if m.deviceToken = invalid then m.deviceToken = ""
         appendDebugLog("ActivationScreen: received code and device token")
