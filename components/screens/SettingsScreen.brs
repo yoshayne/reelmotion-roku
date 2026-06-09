@@ -2,10 +2,6 @@ sub init()
     m.registryTask = CreateObject("roSGNode", "RegistryTask")
     m.registryTask.control = "RUN"
 
-    m.top.findNode("signOutBtn").observeField("buttonSelected", "onSignOut")
-    m.top.findNode("guidelinesBtn").observeField("buttonSelected", "onShowGuidelines")
-    m.top.findNode("closeGuidelinesBtn").observeField("buttonSelected", "onCloseGuidelines")
-
     m.top.observeField("userData", "onUserData")
     m.top.observeField("subscriptionActive", "onSubscriptionActive")
 
@@ -92,14 +88,45 @@ sub hideGuidelines()
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
-    if press and key = "back"
-        if m.top.findNode("guidelinesOverlay").visible = true
-            hideGuidelines()
-            m.top.findNode("guidelinesBtn").setFocus(true)
-            return true
-        else
-            m.top.close = true
-            return true
+    if press
+        if key = "back"
+            if m.top.findNode("guidelinesOverlay").visible = true
+                hideGuidelines()
+                m.top.findNode("guidelinesBtn").setFocus(true)
+                return true
+            else
+                m.top.close = true
+                return true
+            end if
+        end if
+        if key = "OK"
+            if m.top.findNode("guidelinesOverlay").visible = true
+                if m.top.findNode("closeGuidelinesBtn").hasFocus()
+                    hideGuidelines()
+                    m.top.findNode("guidelinesBtn").setFocus(true)
+                    return true
+                end if
+            else
+                if m.top.findNode("signOutBtn").hasFocus()
+                    onSignOut()
+                    return true
+                else if m.top.findNode("guidelinesBtn").hasFocus()
+                    onShowGuidelines()
+                    return true
+                end if
+            end if
+        end if
+        if key = "down"
+            if m.top.findNode("signOutBtn").hasFocus()
+                m.top.findNode("guidelinesBtn").setFocus(true)
+                return true
+            end if
+        end if
+        if key = "up"
+            if m.top.findNode("guidelinesBtn").hasFocus()
+                m.top.findNode("signOutBtn").setFocus(true)
+                return true
+            end if
         end if
     end if
     return false

@@ -6,10 +6,7 @@ sub init()
     m.commentsLoaded = false
     m.videoData = invalid
     m.commentsData = []
-
-    m.top.findNode("playBtn").observeField("buttonSelected", "onPlaySelected")
-    m.top.findNode("myListBtn").observeField("buttonSelected", "onMyListSelected")
-    m.top.findNode("moreInfoBtn").observeField("buttonSelected", "onMoreInfoSelected")
+    m.focusedBtn = "play"
 
     m.top.observeField("contentId", "onContentId")
     m.top.observeField("subscriptionActive", "onSubscriptionChanged")
@@ -88,8 +85,10 @@ sub onHttpResponse()
         updateButtonVisibility()
         if m.top.findNode("playBtn").visible = true
             m.top.findNode("playBtn").setFocus(true)
+            m.focusedBtn = "play"
         else
             m.top.findNode("myListBtn").setFocus(true)
+            m.focusedBtn = "mylist"
         end if
     end if
 end sub
@@ -174,23 +173,41 @@ sub populateCommentsUI(comments as Object)
     m.top.findNode("commentsLabel").text = commentText
 end sub
 
-sub onPlaySelected()
-    m.top.playRequested = true
-end sub
-
-sub onMyListSelected()
-    ' My List functionality placeholder - no backend endpoint defined
-end sub
-
-sub onMoreInfoSelected()
-    ' Could expand description or show additional details
-end sub
-
 function onKeyEvent(key as String, press as Boolean) as Boolean
     if press
         if key = "back"
             m.top.close = true
             return true
+        end if
+        if key = "OK"
+            if m.focusedBtn = "play"
+                m.top.playRequested = true
+                return true
+            end if
+        end if
+        if key = "right"
+            if m.focusedBtn = "play"
+                m.top.findNode("myListBtn").setFocus(true)
+                m.focusedBtn = "mylist"
+                return true
+            else if m.focusedBtn = "mylist"
+                m.top.findNode("moreInfoBtn").setFocus(true)
+                m.focusedBtn = "moreinfo"
+                return true
+            end if
+        end if
+        if key = "left"
+            if m.focusedBtn = "moreinfo"
+                m.top.findNode("myListBtn").setFocus(true)
+                m.focusedBtn = "mylist"
+                return true
+            else if m.focusedBtn = "mylist"
+                if m.top.findNode("playBtn").visible = true
+                    m.top.findNode("playBtn").setFocus(true)
+                    m.focusedBtn = "play"
+                end if
+                return true
+            end if
         end if
     end if
     return false

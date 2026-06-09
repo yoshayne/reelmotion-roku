@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<component name="MainScene" extends="Scene" initialFocus="mainSceneId">
+<component name="MainScene" extends="Scene">
   <interface>
     <field id="launchArgs" type="assocarray" />
   </interface>
