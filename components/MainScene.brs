@@ -2,7 +2,7 @@ sub init()
     m.storedToken = readSessionToken()
     m.userData = invalid
     m.subscriptionActive = false
-    m.activationScreen = invalid
+    m.signInScreen = invalid
     m.homeScreen = invalid
     m.detailScreen = invalid
     m.settingsScreen = invalid
@@ -16,8 +16,8 @@ sub init()
         showHomeScreen()
         verifyToken(m.storedToken)
     else
-        print "MainScene: no session token found, showing activation screen"
-        showActivationScreen()
+        print "MainScene: no session token found, showing sign-in screen"
+        showSignInScreen()
     end if
 end sub
 
@@ -38,42 +38,41 @@ sub clearScreenStack()
         m.top.removeChild(child)
     end for
 
-    m.activationScreen = invalid
+    m.signInScreen = invalid
     m.homeScreen = invalid
     m.detailScreen = invalid
     m.settingsScreen = invalid
     m.playerScreen = invalid
 end sub
 
-sub showActivationScreen()
+sub showSignInScreen()
     clearScreenStack()
 
-    activation = CreateObject("roSGNode", "ActivationScreen")
-    activation.observeField("activationComplete", "onActivationComplete")
-    activation.observeField("close", "onActivationClose")
-    m.top.appendChild(activation)
-    activation.visible = true
-    activation.setFocus(true)
-    m.activationScreen = activation
+    signIn = CreateObject("roSGNode", "SignInScreen")
+    signIn.observeField("signInComplete", "onSignInComplete")
+    m.top.appendChild(signIn)
+    signIn.visible = true
+    signIn.setFocus(true)
+    m.signInScreen = signIn
 
-    print "MainScene: showing activation screen"
+    print "MainScene: showing sign-in screen"
 end sub
 
-sub onActivationComplete()
-    if m.activationScreen = invalid then return
-    if m.activationScreen.activationComplete <> true then return
+sub onSignInComplete()
+    if m.signInScreen = invalid then return
+    if m.signInScreen.signInComplete <> true then return
 
-    token = m.activationScreen.sessionToken
+    token = m.signInScreen.sessionToken
     if token = invalid or token = ""
         token = readSessionToken()
     end if
 
     if token = invalid or token = ""
-        print "MainScene: activationComplete fired without a session token"
+        print "MainScene: signInComplete fired without a session token"
         return
     end if
 
-    print "MainScene: activation complete, navigating to home"
+    print "MainScene: sign-in complete, navigating to home"
     m.storedToken = token
     showHomeScreen()
     verifyToken(token)
@@ -100,7 +99,6 @@ sub onVerifyResponse()
             if json.subscription_active <> invalid
                 m.subscriptionActive = (json.subscription_active = true)
                 print "MainScene: subscription_active = " + (m.subscriptionActive).toStr()
-                ' Update settings screen if open
                 if m.settingsScreen <> invalid
                     m.settingsScreen.subscriptionActive = m.subscriptionActive
                 end if
@@ -112,14 +110,18 @@ sub onVerifyResponse()
                 end if
             end if
         end if
+    else if resp.code = 401
+        print "MainScene: verify returned 401, clearing token and showing sign-in"
+        sec = CreateObject("roRegistrySection", "reelmotion")
+        sec.Delete("session_token")
+        sec.Flush()
+        m.storedToken = ""
+        m.userData = invalid
+        m.subscriptionActive = false
+        showSignInScreen()
     else
         print "MainScene: verify failed with code " + str(resp.code)
     end if
-end sub
-
-sub onActivationClose()
-    ' ActivationScreen currently does not emit close, but keep the observer
-    ' available for future activation cancellation handling.
 end sub
 
 sub showHomeScreen()
@@ -241,7 +243,7 @@ sub onSettingsClose()
 end sub
 
 sub onSignedOut()
-    print "MainScene: signed out, clearing registry and returning to activation"
+    print "MainScene: signed out, clearing registry and returning to sign-in"
     sec = CreateObject("roRegistrySection", "reelmotion")
     sec.Delete("session_token")
     sec.Flush()
@@ -249,7 +251,7 @@ sub onSignedOut()
     m.storedToken = ""
     m.userData = invalid
     m.subscriptionActive = false
-    showActivationScreen()
+    showSignInScreen()
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
