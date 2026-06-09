@@ -68,14 +68,30 @@ end sub
 
 sub onPollCodeExpired()
     if m.pollTask = invalid then return
-    if m.pollTask.codeExpired = true
+    result = m.pollTask.taskResult
+    print "ActivationScreen: taskResult = " + result
+
+    if result = "activated"
+        sessionToken = m.pollTask.sessionToken
+        if sessionToken = invalid then sessionToken = ""
+
+        print "ActivationScreen: session token received from PollTask"
+        m.top.findNode("instrLabel").text = "Activation complete. Loading..."
+        m.top.findNode("spinner").visible = true
+
+        ' SceneGraph navigation must happen on the render thread. A Task should
+        ' publish data to fields, this component should copy that data to its
+        ' interface, and the parent scene should observe this event field.
+        m.top.sessionToken = sessionToken
+        m.top.activationComplete = true
+    else if result = "expired"
         showError("Code expired. Press OK to get a new code.")
     end if
 end sub
 
 sub stopPolling()
     if m.pollTask <> invalid
-        m.pollTask.control = "STOP"
+        m.pollTask.active = false
         m.pollTask = invalid
     end if
 end sub
