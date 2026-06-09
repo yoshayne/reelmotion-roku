@@ -22,7 +22,7 @@ sub requestCode()
 
     m.pendingRequest = "requestCode"
     m.httpTask.request = {
-        url: "https://www.reelmotionapp.com/api/auth/device/request-code",
+        url: "https://reelmotionapp.com/api/auth/device/request-code",
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: "{}",

@@ -35,6 +35,7 @@ sub doRequest(req as Object)
     urlXfer = CreateObject("roUrlTransfer")
     urlXfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
     urlXfer.InitClientCertificates()
+    urlXfer.SetConnectTimeout(30000)
     urlXfer.SetUrl(url)
     urlXfer.SetPort(m.port)
 

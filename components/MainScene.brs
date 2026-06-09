@@ -58,7 +58,7 @@ sub VerifyToken(token as String)
     m.httpTask = CreateObject("roSGNode", "HttpTask")
     m.httpTask.observeField("response", "onVerifyResponse")
     m.httpTask.request = {
-        url: "https://www.reelmotionapp.com/api/auth/device/verify",
+        url: "https://reelmotionapp.com/api/auth/device/verify",
         method: "GET",
         headers: {
             "Authorization": "Bearer " + token

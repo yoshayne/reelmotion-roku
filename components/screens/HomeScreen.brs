@@ -28,7 +28,7 @@ sub loadContent()
     m.top.findNode("errorLabel").visible = false
 
     m.httpTask.request = {
-        url: "https://www.reelmotionapp.com/api/browse-data",
+        url: "https://reelmotionapp.com/api/browse-data",
         method: "GET",
         headers: headers,
         body: "",
