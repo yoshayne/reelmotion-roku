@@ -10,8 +10,6 @@ sub init()
 
     m.verifyTask = CreateObject("roSGNode", "HttpTask")
     m.verifyTask.observeField("response", "onVerifyResponse")
-    m.verifyTask.functionName = "go"
-    m.verifyTask.control = "RUN"
 
     m.activationScreen = invalid
 

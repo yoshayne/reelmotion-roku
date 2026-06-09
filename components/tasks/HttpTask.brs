@@ -1,18 +1,11 @@
 sub init()
+    m.port = CreateObject("roMessagePort")
+    m.top.observeField("request", m.port)
+    m.top.functionName = "go"
+    m.top.control = "RUN"
 end sub
 
 sub go()
-    m.port = CreateObject("roMessagePort")
-
-    ' Check for a request set before this thread started — must happen BEFORE
-    ' observeField so the same request is never processed twice (once by this
-    ' check and once by the queued observer event).
-    if m.top.request <> invalid
-        doRequest(m.top.request)
-    end if
-
-    m.top.observeField("request", m.port)
-
     while true
         msg = wait(0, m.port)
         if type(msg) = "roSGNodeEvent"
