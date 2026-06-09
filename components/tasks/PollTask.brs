@@ -29,7 +29,7 @@ sub runPoll()
         url.AddHeader("Accept", "application/json")
         url.SetRequest("POST")
 
-        body = FormatJson({ deviceToken: deviceToken })
+        body = FormatJson({ device_token: deviceToken })
         responseCode = url.PostFromString(body)
         responseBody = url.GetToString()
         if responseBody = invalid then responseBody = ""
