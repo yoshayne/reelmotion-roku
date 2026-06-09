@@ -1,38 +1,52 @@
 sub init()
     m.top.functionName = "runRequest"
     m.top.responseCode = 0
-    m.top.done = false
+    m.top.responseBody = ""
+    m.top.responseJson = invalid
+    m.top.errorMessage = ""
+    m.top.result = ""
 end sub
 
 sub runRequest()
-    json = RequestActivationCode()
-    if json <> invalid
-        m.top.responseJson = json
-    end if
-    m.top.done = true
-end sub
+    requestUrl = "https://reelmotionapp.com/api/auth/device/request-code"
 
-function RequestActivationCode() as Object
+    print "ActivationTask: starting request-code POST"
+    print "ActivationTask: URL = " + requestUrl
+
     url = CreateObject("roUrlTransfer")
-    url.SetUrl("https://reelmotionapp.com/api/auth/device/request-code")
+    url.SetUrl(requestUrl)
     url.SetCertificatesFile("common:/certs/ca-bundle.crt")
     url.InitClientCertificates()
     url.EnableEncodings(true)
     url.RetainBodyOnError(true)
+    url.SetConnectTimeout(30000)
     url.AddHeader("Content-Type", "application/json")
     url.AddHeader("Accept", "application/json")
     url.SetRequest("POST")
 
-    responseCode = url.PostFromString("{}")
     responseBody = url.GetToString()
+    if responseBody = invalid then responseBody = ""
 
-    print "Activation request response code: " + str(responseCode)
-    print "Activation request response body: " + responseBody
+    m.top.responseBody = responseBody
+    print "ActivationTask: response body = " + responseBody
 
-    m.top.responseCode = responseCode
+    if responseBody <> ""
+        json = ParseJson(responseBody)
+        if json <> invalid
+            m.top.responseCode = 200
+            m.top.responseJson = json
+            m.top.result = "success"
+            return
+        end if
 
-    if responseCode = 200
-        return ParseJson(responseBody)
+        m.top.errorMessage = "Could not parse activation response JSON"
+        m.top.result = "error"
+        return
     end if
-    return invalid
-end function
+
+    failureReason = url.GetFailureReason()
+    if failureReason = invalid then failureReason = "empty response"
+    m.top.errorMessage = failureReason
+    print "ActivationTask: request failed = " + failureReason
+    m.top.result = "error"
+end sub

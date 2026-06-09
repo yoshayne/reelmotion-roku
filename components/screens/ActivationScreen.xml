@@ -20,5 +20,8 @@
     <!-- Error state -->
     <Label id="errorLabel" text="" color="#DC2626" font="font:SmallSystemFont" horizAlign="center" width="1280" translation="[0, 500]" visible="false" />
     <Button id="retryButton" text="Get New Code" translation="[490, 540]" visible="false" />
+    <!-- On-screen debug log for sideload/install troubleshooting. -->
+    <Rectangle id="debugBg" color="#111111" opacity="0.85" width="1200" height="115" translation="[40, 585]" />
+    <Label id="debugLabel" text="" color="#9CA3AF" font="font:TinySystemFont" width="1180" height="105" translation="[50, 592]" wrap="true" />
   </children>
 </component>
