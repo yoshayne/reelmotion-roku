@@ -9,7 +9,19 @@ sub init()
     m.deviceToken = ""
     m.pollTask = invalid
 
+    connectivityTest()
     requestCode()
+end sub
+
+sub connectivityTest()
+    print "ActivationScreen: running connectivity test to https://reelmotionapp.com"
+    m.httpTask.request = {
+        url: "https://reelmotionapp.com",
+        method: "GET",
+        headers: {},
+        body: "",
+        context: "connectivityTest"
+    }
 end sub
 
 sub requestCode()
@@ -38,6 +50,13 @@ sub onHttpResponse()
     end if
 
     context = resp.context
+
+    if context = "connectivityTest"
+        print "ActivationScreen: connectivity test response code = " + str(resp.code)
+        print "ActivationScreen: connectivity test body = " + resp.content
+        requestCode()
+        return
+    end if
 
     if context = "requestCode"
         if resp.code = 200

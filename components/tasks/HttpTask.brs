@@ -26,16 +26,21 @@ sub doRequest(req as Object)
     context = req.context
 
     if url = invalid or url = "" then
+        print "HttpTask: ERROR - empty URL"
         m.top.response = {code: -1, content: "", context: context}
         return
     end if
 
     if method = invalid then method = "GET"
 
+    print "HttpTask: >>> " + UCase(method) + " " + url
+
     urlXfer = CreateObject("roUrlTransfer")
     urlXfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
     urlXfer.InitClientCertificates()
-    urlXfer.SetConnectTimeout(30000)
+    urlXfer.EnableEncodings(true)
+    urlXfer.RetainBodyOnError(true)
+    urlXfer.SetConnectTimeout(60000)
     urlXfer.SetUrl(url)
     urlXfer.SetPort(m.port)
 
@@ -49,6 +54,7 @@ sub doRequest(req as Object)
         end if
         postBody = ""
         if body <> invalid then postBody = body
+        print "HttpTask: POST body = " + postBody
         ok = urlXfer.AsyncPostFromString(postBody)
     else
         urlXfer.SetRequest("GET")
@@ -60,18 +66,28 @@ sub doRequest(req as Object)
         ok = urlXfer.AsyncGetToString()
     end if
 
-    if ok
-        responseMsg = wait(30000, m.port)
-        if type(responseMsg) = "roUrlEvent"
-            m.top.response = {
-                code: responseMsg.GetResponseCode(),
-                content: responseMsg.GetString(),
-                context: context
-            }
-        else
-            m.top.response = {code: -1, content: "", context: context}
+    if not ok
+        reason = urlXfer.GetFailureReason()
+        print "HttpTask: ERROR - AsyncRequest failed, reason: " + reason
+        m.top.response = {code: -1, content: "", context: context}
+        return
+    end if
+
+    responseMsg = wait(60000, m.port)
+    if type(responseMsg) = "roUrlEvent"
+        code = responseMsg.GetResponseCode()
+        content = responseMsg.GetString()
+        reason = urlXfer.GetFailureReason()
+        print "HttpTask: <<< response code = " + str(code)
+        print "HttpTask: <<< response body = " + content
+        if reason <> "" and reason <> invalid
+            print "HttpTask: <<< failure reason = " + reason
         end if
+        m.top.response = {code: code, content: content, context: context}
     else
+        reason = urlXfer.GetFailureReason()
+        print "HttpTask: ERROR - wait timed out or wrong event type: " + type(responseMsg)
+        print "HttpTask: <<< failure reason = " + reason
         m.top.response = {code: -1, content: "", context: context}
     end if
 end sub
