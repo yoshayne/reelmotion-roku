@@ -36,10 +36,14 @@ function readSessionToken() as String
 end function
 
 sub clearScreenStack()
-    children = m.top.getChildren(-1, 0)
-    for each child in children
+    childCount = m.top.getChildCount()
+    i = 0
+    while i < childCount
+        child = m.top.getChild(0)
+        if child = invalid then exit while
         m.top.removeChild(child)
-    end for
+        i = i + 1
+    end while
 
     m.signInScreen = invalid
     m.activationScreen = invalid
