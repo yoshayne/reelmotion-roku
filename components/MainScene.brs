@@ -2,7 +2,7 @@ sub init()
     m.storedToken = readSessionToken()
     m.userData = invalid
     m.subscriptionActive = false
-    m.activationScreen = invalid
+    m.signInScreen = invalid
     m.homeScreen = invalid
     m.detailScreen = invalid
     m.settingsScreen = invalid
@@ -10,14 +10,18 @@ sub init()
 
     m.verifyTask = CreateObject("roSGNode", "HttpTask")
     m.verifyTask.observeField("response", "onVerifyResponse")
+    m.verifyTask.functionName = "go"
+    m.verifyTask.control = "RUN"
+
+    m.activationScreen = invalid
 
     if m.storedToken <> invalid and m.storedToken <> ""
         print "MainScene: session token found, showing home screen"
         showHomeScreen()
         verifyToken(m.storedToken)
     else
-        print "MainScene: no session token found, showing activation screen"
-        showActivationScreen()
+        print "MainScene: no session token found, showing sign-in screen"
+        showSignInScreen()
     end if
 end sub
 
@@ -38,6 +42,7 @@ sub clearScreenStack()
         m.top.removeChild(child)
     end for
 
+    m.signInScreen = invalid
     m.activationScreen = invalid
     m.homeScreen = invalid
     m.detailScreen = invalid
@@ -45,12 +50,53 @@ sub clearScreenStack()
     m.playerScreen = invalid
 end sub
 
+sub showSignInScreen()
+    clearScreenStack()
+
+    signIn = CreateObject("roSGNode", "SignInScreen")
+    signIn.observeField("signInComplete", "onSignInComplete")
+    signIn.observeField("useActivationCode", "onUseActivationCode")
+    m.top.appendChild(signIn)
+    signIn.visible = true
+    signIn.setFocus(true)
+    m.signInScreen = signIn
+
+    print "MainScene: showing sign-in screen"
+end sub
+
+sub onSignInComplete()
+    if m.signInScreen = invalid then return
+    if m.signInScreen.signInComplete <> true then return
+
+    token = m.signInScreen.sessionToken
+    if token = invalid or token = ""
+        token = readSessionToken()
+    end if
+
+    if token = invalid or token = ""
+        print "MainScene: signInComplete fired without a session token"
+        return
+    end if
+
+    print "MainScene: sign-in complete, navigating to home"
+    m.storedToken = token
+    showHomeScreen()
+    verifyToken(token)
+end sub
+
+sub onUseActivationCode()
+    if m.signInScreen = invalid then return
+    if m.signInScreen.useActivationCode <> true then return
+    print "MainScene: switching to activation screen"
+    showActivationScreen()
+end sub
+
 sub showActivationScreen()
     clearScreenStack()
 
     activation = CreateObject("roSGNode", "ActivationScreen")
     activation.observeField("activationComplete", "onActivationComplete")
-    activation.observeField("close", "onActivationClose")
+    activation.observeField("useEmailSignIn", "onUseEmailSignIn")
     m.top.appendChild(activation)
     activation.visible = true
     activation.setFocus(true)
@@ -79,6 +125,13 @@ sub onActivationComplete()
     verifyToken(token)
 end sub
 
+sub onUseEmailSignIn()
+    if m.activationScreen = invalid then return
+    if m.activationScreen.useEmailSignIn <> true then return
+    print "MainScene: switching to sign-in screen"
+    showSignInScreen()
+end sub
+
 sub verifyToken(token as String)
     m.verifyTask.request = {
         url: "https://reelmotionapp.com/api/auth/device/verify",
@@ -100,7 +153,6 @@ sub onVerifyResponse()
             if json.subscription_active <> invalid
                 m.subscriptionActive = (json.subscription_active = true)
                 print "MainScene: subscription_active = " + (m.subscriptionActive).toStr()
-                ' Update settings screen if open
                 if m.settingsScreen <> invalid
                     m.settingsScreen.subscriptionActive = m.subscriptionActive
                 end if
@@ -112,14 +164,18 @@ sub onVerifyResponse()
                 end if
             end if
         end if
+    else if resp.code = 401
+        print "MainScene: verify returned 401, clearing token and showing sign-in"
+        sec = CreateObject("roRegistrySection", "reelmotion")
+        sec.Delete("session_token")
+        sec.Flush()
+        m.storedToken = ""
+        m.userData = invalid
+        m.subscriptionActive = false
+        showSignInScreen()
     else
         print "MainScene: verify failed with code " + str(resp.code)
     end if
-end sub
-
-sub onActivationClose()
-    ' ActivationScreen currently does not emit close, but keep the observer
-    ' available for future activation cancellation handling.
 end sub
 
 sub showHomeScreen()
@@ -241,7 +297,7 @@ sub onSettingsClose()
 end sub
 
 sub onSignedOut()
-    print "MainScene: signed out, clearing registry and returning to activation"
+    print "MainScene: signed out, clearing registry and returning to sign-in"
     sec = CreateObject("roRegistrySection", "reelmotion")
     sec.Delete("session_token")
     sec.Flush()
@@ -249,7 +305,7 @@ sub onSignedOut()
     m.storedToken = ""
     m.userData = invalid
     m.subscriptionActive = false
-    showActivationScreen()
+    showSignInScreen()
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean

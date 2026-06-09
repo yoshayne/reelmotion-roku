@@ -1,27 +1,20 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <component name="ActivationScreen" extends="Group">
   <interface>
-    <field id="close" type="boolean" alwaysNotify="true" />
     <field id="activationComplete" type="boolean" alwaysNotify="true" />
     <field id="sessionToken" type="string" />
+    <field id="useEmailSignIn" type="boolean" alwaysNotify="true" />
   </interface>
   <script type="text/brightscript" uri="pkg:/components/screens/ActivationScreen.brs" />
   <children>
-    <!-- Black background -->
     <Rectangle id="bg" color="#000000" width="1280" height="720" />
-    <!-- Logo centered top area -->
-    <Poster id="logo" uri="pkg:/images/logo.png" width="280" height="80" translation="[500, 180]" />
-    <!-- Activation code - large red -->
-    <Label id="codeLabel" text="" color="#DC2626" font="font:LargeBoldSystemFont" horizAlign="center" width="1280" translation="[0, 320]" />
-    <!-- Instructions -->
-    <Label id="instrLabel" text="Go to reelmotionapp.com/activate on your phone or computer and enter this code" color="#FFFFFF" font="font:SmallSystemFont" horizAlign="center" width="900" translation="[190, 400]" wrap="true" />
-    <!-- Loading spinner -->
-    <BusySpinner id="spinner" translation="[610, 470]" visible="true" />
-    <!-- Error state -->
-    <Label id="errorLabel" text="" color="#DC2626" font="font:SmallSystemFont" horizAlign="center" width="1280" translation="[0, 500]" visible="false" />
+    <Poster id="logo" uri="pkg:/images/logo.png" width="280" height="80" translation="[500, 80]" />
+    <Label id="headlineLabel" text="Activate on Your TV" color="#FFFFFF" font="font:MediumBoldSystemFont" horizAlign="center" width="1280" translation="[0, 200]" />
+    <Label id="codeLabel" text="" color="#DC2626" font="font:LargeBoldSystemFont" horizAlign="center" width="1280" translation="[0, 270]" />
+    <Label id="instrLabel" text="Requesting activation code..." color="#FFFFFF" font="font:SmallSystemFont" horizAlign="center" width="900" translation="[190, 370]" wrap="true" />
+    <BusySpinner id="spinner" translation="[624, 440]" visible="true" />
+    <Label id="errorLabel" text="" color="#DC2626" font="font:SmallSystemFont" horizAlign="center" width="1000" translation="[140, 480]" visible="false" wrap="true" />
     <Button id="retryButton" text="Get New Code" translation="[490, 540]" visible="false" />
-    <!-- On-screen debug log for sideload/install troubleshooting. -->
-    <Rectangle id="debugBg" color="#111111" opacity="0.85" width="1200" height="115" translation="[40, 585]" />
-    <Label id="debugLabel" text="" color="#9CA3AF" font="font:TinySystemFont" width="1180" height="105" translation="[50, 592]" wrap="true" />
+    <Label id="emailSignInLabel" text="Sign in with email instead" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="1280" translation="[0, 630]" />
   </children>
 </component>

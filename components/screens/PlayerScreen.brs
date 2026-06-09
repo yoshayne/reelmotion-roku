@@ -3,6 +3,7 @@ sub init()
     m.video.width = 1280
     m.video.height = 720
     m.top.appendChild(m.video)
+    m.video.observeField("state", "onVideoStateChange")
     m.top.observeField("videoData", "onVideoData")
 end sub
 
@@ -21,7 +22,6 @@ sub onVideoData()
     end if
 
     m.video.content = content
-    m.video.observeField("state", "onVideoStateChange")
     m.video.control = "play"
     m.video.setFocus(true)
 end sub

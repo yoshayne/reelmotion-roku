@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <component name="ActivationTask" extends="Task">
-  <interface>
-    <field id="responseCode" type="integer" />
-    <field id="responseBody" type="string" />
-    <field id="responseJson" type="assocarray" />
-    <field id="errorMessage" type="string" />
-    <field id="result" type="string" alwaysNotify="true" />
-  </interface>
-  <script type="text/brightscript" uri="pkg:/components/tasks/ActivationTask.brs" />
+    <interface>
+        <field id="code" type="string" value="" />
+        <field id="deviceToken" type="string" value="" />
+        <field id="errorMessage" type="string" value="" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/tasks/ActivationTask.brs" />
 </component>

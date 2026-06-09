@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<component name="PlayerScreen" extends="Scene">
+<component name="PlayerScreen" extends="Group">
   <interface>
     <field id="videoData" type="assocarray" alwaysNotify="true" />
     <field id="close" type="boolean" alwaysNotify="true" />

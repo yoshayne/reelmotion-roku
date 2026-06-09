@@ -1,16 +1,13 @@
 sub init()
     m.httpTask = CreateObject("roSGNode", "HttpTask")
     m.httpTask.observeField("response", "onContentLoaded")
+    m.httpTask.functionName = "go"
+    m.httpTask.control = "RUN"
 
     m.top.observeField("authToken", "onAuthToken")
 
     rowList = m.top.findNode("rowList")
     rowList.observeField("itemSelected", "onItemSelected")
-    rowList.observeField("rowItemFocused", "onRowItemFocused")
-
-    if m.top.authToken <> invalid and m.top.authToken <> ""
-        loadContent()
-    end if
 end sub
 
 sub onAuthToken()
@@ -121,10 +118,6 @@ sub onItemSelected()
     selected = rowList.focusedChild
     if selected = invalid then return
     m.top.selectedItem = selected
-end sub
-
-sub onRowItemFocused()
-    ' Could highlight nav items based on focus position
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
