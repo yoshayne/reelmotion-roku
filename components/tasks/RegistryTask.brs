@@ -1,9 +1,10 @@
 sub init()
-    m.port = CreateObject("roMessagePort")
-    m.top.observeField("request", m.port)
 end sub
 
 sub mainThread()
+    m.port = CreateObject("roMessagePort")
+    m.top.observeField("request", m.port)
+
     while true
         msg = wait(0, m.port)
         if type(msg) = "roSGNodeEvent"
