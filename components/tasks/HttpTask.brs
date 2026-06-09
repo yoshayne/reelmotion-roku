@@ -5,6 +5,11 @@ sub go()
     m.port = CreateObject("roMessagePort")
     m.top.observeField("request", m.port)
 
+    ' Process a request that was set before this thread started
+    if m.top.request <> invalid
+        doRequest(m.top.request)
+    end if
+
     while true
         msg = wait(0, m.port)
         if type(msg) = "roSGNodeEvent"
