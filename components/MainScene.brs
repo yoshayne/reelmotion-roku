@@ -1,49 +1,97 @@
 sub init()
-    m.checkTimer = CreateObject("roSGNode", "Timer")
-    m.checkTimer.duration = 2
-    m.checkTimer.repeat = true
-    m.checkTimer.observeField("fire", "onTimerFire")
-
-    m.storedToken = ""
+    m.storedToken = readSessionToken()
     m.userData = invalid
     m.subscriptionActive = false
+    m.activationScreen = invalid
+    m.homeScreen = invalid
+    m.detailScreen = invalid
+    m.settingsScreen = invalid
     m.playerScreen = invalid
 
-    showActivationScreen()
-
-    m.checkTimer.control = "start"
-    print "MainScene: init complete, timer started"
-end sub
-
-sub onTimerFire()
-    sec = CreateObject("roRegistrySection", "reelmotion")
-    if sec.Exists("session_token")
-        token = sec.Read("session_token")
-        if token <> "" and token <> invalid
-            print "MainScene: timer found session_token in registry, navigating to home"
-            m.checkTimer.control = "stop"
-            m.storedToken = token
-            showHomeScreen()
-        end if
+    if m.storedToken <> invalid and m.storedToken <> ""
+        print "MainScene: session token found, showing home screen"
+        showHomeScreen()
+    else
+        print "MainScene: no session token found, showing activation screen"
+        showActivationScreen()
     end if
 end sub
 
+function readSessionToken() as String
+    sec = CreateObject("roRegistrySection", "reelmotion")
+    if sec.Exists("session_token")
+        token = sec.Read("session_token")
+        if token <> invalid
+            return token
+        end if
+    end if
+    return ""
+end function
+
+sub clearScreenStack()
+    children = m.top.getChildren(-1, 0)
+    for each child in children
+        m.top.removeChild(child)
+    end for
+
+    m.activationScreen = invalid
+    m.homeScreen = invalid
+    m.detailScreen = invalid
+    m.settingsScreen = invalid
+    m.playerScreen = invalid
+end sub
+
 sub showActivationScreen()
-    m.top.removeChildren(m.top.getChildren(-1, 0))
-    m.top.createChild("ActivationScreen")
+    clearScreenStack()
+
+    activation = CreateObject("roSGNode", "ActivationScreen")
+    activation.observeField("activationComplete", "onActivationComplete")
+    activation.observeField("close", "onActivationClose")
+    m.top.appendChild(activation)
+    activation.visible = true
+    activation.setFocus(true)
+    m.activationScreen = activation
+
     print "MainScene: showing activation screen"
 end sub
 
+sub onActivationComplete()
+    if m.activationScreen = invalid then return
+    if m.activationScreen.activationComplete <> true then return
+
+    token = m.activationScreen.sessionToken
+    if token = invalid or token = ""
+        token = readSessionToken()
+    end if
+
+    if token = invalid or token = ""
+        print "MainScene: activationComplete fired without a session token"
+        return
+    end if
+
+    print "MainScene: activation complete, navigating to home"
+    m.storedToken = token
+    showHomeScreen()
+end sub
+
+sub onActivationClose()
+    ' ActivationScreen currently does not emit close, but keep the observer
+    ' available for future activation cancellation handling.
+end sub
+
 sub showHomeScreen()
-    print "MainScene: showing home screen, token = " + m.storedToken
-    m.top.removeChildren(m.top.getChildren(-1, 0))
-    home = m.top.createChild("HomeScreen")
+    print "MainScene: showing home screen"
+    clearScreenStack()
+
+    home = CreateObject("roSGNode", "HomeScreen")
     if m.storedToken <> invalid and m.storedToken <> ""
         home.authToken = m.storedToken
     end if
     home.observeField("selectedItem", "onHomeItemSelected")
     home.observeField("goSettings", "onHomeGoSettings")
     home.observeField("close", "onHomeClose")
+    m.top.appendChild(home)
+    home.visible = true
     home.setFocus(true)
     m.homeScreen = home
 end sub
@@ -154,19 +202,19 @@ sub onSignedOut()
     sec = CreateObject("roRegistrySection", "reelmotion")
     sec.Delete("session_token")
     sec.Flush()
-    if m.settingsScreen <> invalid
-        m.top.removeChild(m.settingsScreen)
-        m.settingsScreen = invalid
-    end if
+
     m.storedToken = ""
     m.userData = invalid
     m.subscriptionActive = false
     showActivationScreen()
-    m.checkTimer.control = "start"
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
     if press and key = "back"
+        if m.playerScreen <> invalid
+            onPlayerClose()
+            return true
+        end if
         if m.detailScreen <> invalid
             onDetailClose()
             return true
