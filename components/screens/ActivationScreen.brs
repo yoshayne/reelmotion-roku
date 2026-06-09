@@ -42,32 +42,31 @@ sub onActivationDone()
 end sub
 
 sub startPolling()
-    if m.pollTask <> invalid
-        m.pollTask.active = false
-        m.pollTask = invalid
-    end if
+    stopPolling()
 
     m.pollTask = CreateObject("roSGNode", "PollTask")
-    m.pollTask.observeField("taskResult", "onPollTaskResult")
-    m.pollTask.observeField("status", "onPollStatus")
+    m.pollTask.observeField("activationComplete", "onPollActivationComplete")
+    m.pollTask.observeField("codeExpired", "onPollCodeExpired")
     m.pollTask.deviceToken = m.deviceToken
-    m.pollTask.active = true
     m.pollTask.control = "RUN"
 end sub
 
-sub onPollStatus()
+sub onPollActivationComplete()
     if m.pollTask = invalid then return
-    status = m.pollTask.status
-    print "ActivationScreen: poll status = " + status
+    if m.pollTask.activationComplete <> true then return
 
-    if status = "pending"
-        m.top.findNode("instrLabel").text = "Waiting for activation..." + Chr(10) + "Go to reelmotionapp.com/activate and enter this code"
-    else if status = "expired"
-        showError("Code expired. Press OK to get a new code.")
-    end if
+    sessionToken = m.pollTask.sessionToken
+    if sessionToken = invalid then sessionToken = ""
+
+    print "ActivationScreen: PollTask activation complete"
+    m.top.findNode("instrLabel").text = "Activation complete. Loading..."
+    m.top.findNode("spinner").visible = true
+
+    m.top.sessionToken = sessionToken
+    m.top.activationComplete = true
 end sub
 
-sub onPollTaskResult()
+sub onPollCodeExpired()
     if m.pollTask = invalid then return
     result = m.pollTask.taskResult
     print "ActivationScreen: taskResult = " + result

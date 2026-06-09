@@ -1,75 +1,65 @@
 sub init()
-    m.top.functionName = "pollLoop"
-    m.top.status = "pending"
-    m.top.taskResult = ""
+    m.top.functionName = "runPoll"
     m.top.sessionToken = ""
+    m.top.activationComplete = false
+    m.top.codeExpired = false
 end sub
 
-sub pollLoop()
-    while m.top.active = true
-        deviceToken = m.top.deviceToken
-        if deviceToken = invalid or deviceToken = ""
-            sleep(5000)
-        else
-            doPost(deviceToken)
-            if m.top.taskResult = "activated" or m.top.status = "expired"
-                return
+sub runPoll()
+    deviceToken = m.top.deviceToken
+    baseUrl = "https://reelmotionapp.com"
+
+    if deviceToken = invalid or deviceToken = ""
+        print "PollTask: missing device token; cannot start polling"
+        return
+    end if
+
+    while true
+        ' Wait 5 seconds between polls.
+        sleep(5000)
+
+        url = CreateObject("roUrlTransfer")
+        url.SetUrl(baseUrl + "/api/auth/device/poll")
+        url.SetCertificatesFile("common:/certs/ca-bundle.crt")
+        url.InitClientCertificates()
+        url.EnableEncodings(true)
+        url.RetainBodyOnError(true)
+        url.SetConnectTimeout(30000)
+        url.AddHeader("Content-Type", "application/json")
+        url.AddHeader("Accept", "application/json")
+        url.SetRequest("POST")
+
+        body = FormatJson({ deviceToken: deviceToken })
+        responseCode = url.PostFromString(body)
+        responseBody = url.GetToString()
+        if responseBody = invalid then responseBody = ""
+
+        print "PollTask: poll response code = " + str(responseCode).trim()
+        print "PollTask: poll response body = " + responseBody
+
+        if responseBody <> invalid and responseBody <> ""
+            json = ParseJson(responseBody)
+            if json <> invalid and json.status <> invalid
+                if json.status = "activated"
+                    sessionToken = json.session_token
+                    if sessionToken = invalid then sessionToken = ""
+
+                    if sessionToken <> ""
+                        sec = CreateObject("roRegistrySection", "reelmotion")
+                        sec.Write("session_token", sessionToken)
+                        sec.Flush()
+                    end if
+
+                    m.top.sessionToken = sessionToken
+                    m.top.activationComplete = true
+                    return
+                else if json.status = "expired"
+                    m.top.codeExpired = true
+                    return
+                end if
             end if
-            sleep(5000)
+        else
+            print "PollTask: empty response; polling will retry"
         end if
     end while
-end sub
-
-sub doPost(deviceToken as String)
-    urlXfer = CreateObject("roUrlTransfer")
-    urlXfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
-    urlXfer.InitClientCertificates()
-    urlXfer.EnableEncodings(true)
-    urlXfer.RetainBodyOnError(true)
-    urlXfer.SetConnectTimeout(30000)
-    urlXfer.SetUrl("https://reelmotionapp.com/api/auth/device/poll")
-    urlXfer.SetRequest("POST")
-    urlXfer.AddHeader("Content-Type", "application/json")
-    urlXfer.AddHeader("Accept", "application/json")
-
-    body = FormatJson({device_token: deviceToken})
-    responseCode = urlXfer.PostFromString(body)
-    responseStr = urlXfer.GetToString()
-
-    print "PollTask: poll response code = " + str(responseCode)
-    print "PollTask: poll response body = " + responseStr
-
-    if responseCode = 200 and responseStr <> invalid and responseStr <> ""
-        json = ParseJson(responseStr)
-        if json <> invalid
-            status = json.status
-            print "PollTask: status = " + status
-            if status = "activated"
-                token = json.session_token
-                if token = invalid then token = ""
-                m.top.sessionToken = token
-                m.top.status = "activated"
-                ' Write token to registry directly from task thread
-                writeTokenToRegistry(token)
-                ' Fire taskResult last — this is what the timer and observers watch
-                m.top.taskResult = "activated"
-            else if status = "expired"
-                m.top.status = "expired"
-                m.top.taskResult = "expired"
-            else
-                m.top.status = "pending"
-            end if
-        end if
-    else
-        print "PollTask: non-200 or empty response, will retry"
-    end if
-end sub
-
-sub writeTokenToRegistry(token as String)
-    if token = invalid or token = "" then return
-    print "PollTask: writing session_token to registry section reelmotion"
-    sec = CreateObject("roRegistrySection", "reelmotion")
-    sec.Write("session_token", token)
-    sec.Flush()
-    print "PollTask: registry write complete"
 end sub
