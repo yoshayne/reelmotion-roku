@@ -10,6 +10,7 @@ sub init()
 end sub
 
 sub onCodeReceived()
+    if m.activationTask = invalid then return
     code = m.activationTask.code
     if code = invalid or code = "" then return
 
@@ -24,8 +25,9 @@ sub onCodeReceived()
 end sub
 
 sub onActivationError()
+    if m.activationTask = invalid then return
     errMsg = m.activationTask.errorMessage
-    if errMsg = invalid then errMsg = "Could not connect. Please retry."
+    if errMsg = invalid or errMsg = "" then return
     showError(errMsg)
 end sub
 
@@ -44,6 +46,7 @@ sub startPolling(deviceToken as String)
 end sub
 
 sub onSessionTokenReceived()
+    if m.pollTask = invalid then return
     token = m.pollTask.sessionToken
     if token = invalid or token = "" then return
 
@@ -80,7 +83,10 @@ sub retryActivation()
         m.pollTask.control = "STOP"
         m.pollTask = invalid
     end if
-    m.activationTask = invalid
+    if m.activationTask <> invalid
+        m.activationTask.control = "STOP"
+        m.activationTask = invalid
+    end if
 
     m.top.findNode("codeLabel").text = ""
     m.top.findNode("instrLabel").text = "Requesting activation code..."
@@ -100,15 +106,19 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
 
     if key = "OK"
         retryBtn = m.top.findNode("retryButton")
-        if retryBtn.visible = true
+        if retryBtn <> invalid and retryBtn.visible = true
             retryActivation()
             return true
         end if
     end if
 
+    ' Only switch to email sign-in when retryButton is focused and user presses down
     if key = "down"
-        m.top.useEmailSignIn = true
-        return true
+        retryBtn = m.top.findNode("retryButton")
+        if retryBtn <> invalid and retryBtn.visible = true and retryBtn.hasFocus()
+            m.top.useEmailSignIn = true
+            return true
+        end if
     end if
 
     return false

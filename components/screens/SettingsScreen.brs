@@ -1,7 +1,4 @@
 sub init()
-    m.registryTask = CreateObject("roSGNode", "RegistryTask")
-    m.registryTask.control = "RUN"
-
     m.top.observeField("userData", "onUserData")
     m.top.observeField("subscriptionActive", "onSubscriptionActive")
 
