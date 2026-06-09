@@ -3,6 +3,7 @@
   <interface>
     <field id="signInComplete" type="boolean" alwaysNotify="true" />
     <field id="sessionToken" type="string" />
+    <field id="useActivationCode" type="boolean" alwaysNotify="true" />
   </interface>
   <script type="text/brightscript" uri="pkg:/components/screens/SignInScreen.brs" />
   <children>
@@ -32,6 +33,9 @@
 
     <!-- Sign Up hint -->
     <Label id="signUpLabel" text="New member? Join at reelmotionapp.com" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="1280" translation="[0, 550]" />
+
+    <!-- Activation code toggle -->
+    <Label id="activationCodeLabel" text="Use activation code instead" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="1280" translation="[0, 630]" />
 
     <!-- Spinner -->
     <BusySpinner id="spinner" translation="[624, 480]" visible="false" />

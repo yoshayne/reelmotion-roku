@@ -10,6 +10,10 @@ sub init()
 
     m.verifyTask = CreateObject("roSGNode", "HttpTask")
     m.verifyTask.observeField("response", "onVerifyResponse")
+    m.verifyTask.functionName = "go"
+    m.verifyTask.control = "RUN"
+
+    m.activationScreen = invalid
 
     if m.storedToken <> invalid and m.storedToken <> ""
         print "MainScene: session token found, showing home screen"
@@ -39,6 +43,7 @@ sub clearScreenStack()
     end for
 
     m.signInScreen = invalid
+    m.activationScreen = invalid
     m.homeScreen = invalid
     m.detailScreen = invalid
     m.settingsScreen = invalid
@@ -50,6 +55,7 @@ sub showSignInScreen()
 
     signIn = CreateObject("roSGNode", "SignInScreen")
     signIn.observeField("signInComplete", "onSignInComplete")
+    signIn.observeField("useActivationCode", "onUseActivationCode")
     m.top.appendChild(signIn)
     signIn.visible = true
     signIn.setFocus(true)
@@ -76,6 +82,54 @@ sub onSignInComplete()
     m.storedToken = token
     showHomeScreen()
     verifyToken(token)
+end sub
+
+sub onUseActivationCode()
+    if m.signInScreen = invalid then return
+    if m.signInScreen.useActivationCode <> true then return
+    print "MainScene: switching to activation screen"
+    showActivationScreen()
+end sub
+
+sub showActivationScreen()
+    clearScreenStack()
+
+    activation = CreateObject("roSGNode", "ActivationScreen")
+    activation.observeField("activationComplete", "onActivationComplete")
+    activation.observeField("useEmailSignIn", "onUseEmailSignIn")
+    m.top.appendChild(activation)
+    activation.visible = true
+    activation.setFocus(true)
+    m.activationScreen = activation
+
+    print "MainScene: showing activation screen"
+end sub
+
+sub onActivationComplete()
+    if m.activationScreen = invalid then return
+    if m.activationScreen.activationComplete <> true then return
+
+    token = m.activationScreen.sessionToken
+    if token = invalid or token = ""
+        token = readSessionToken()
+    end if
+
+    if token = invalid or token = ""
+        print "MainScene: activationComplete fired without a session token"
+        return
+    end if
+
+    print "MainScene: activation complete, navigating to home"
+    m.storedToken = token
+    showHomeScreen()
+    verifyToken(token)
+end sub
+
+sub onUseEmailSignIn()
+    if m.activationScreen = invalid then return
+    if m.activationScreen.useEmailSignIn <> true then return
+    print "MainScene: switching to sign-in screen"
+    showSignInScreen()
 end sub
 
 sub verifyToken(token as String)

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="ActivationScreen" extends="Group">
+  <interface>
+    <field id="activationComplete" type="boolean" alwaysNotify="true" />
+    <field id="sessionToken" type="string" />
+    <field id="useEmailSignIn" type="boolean" alwaysNotify="true" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/screens/ActivationScreen.brs" />
+  <children>
+    <Rectangle id="bg" color="#000000" width="1280" height="720" />
+    <Poster id="logo" uri="pkg:/images/logo.png" width="280" height="80" translation="[500, 80]" />
+    <Label id="headlineLabel" text="Activate on Your TV" color="#FFFFFF" font="font:MediumBoldSystemFont" horizAlign="center" width="1280" translation="[0, 200]" />
+    <Label id="codeLabel" text="" color="#DC2626" font="font:LargeBoldSystemFont" horizAlign="center" width="1280" translation="[0, 270]" />
+    <Label id="instrLabel" text="Requesting activation code..." color="#FFFFFF" font="font:SmallSystemFont" horizAlign="center" width="900" translation="[190, 370]" wrap="true" />
+    <BusySpinner id="spinner" translation="[624, 440]" visible="true" />
+    <Label id="errorLabel" text="" color="#DC2626" font="font:SmallSystemFont" horizAlign="center" width="1000" translation="[140, 480]" visible="false" wrap="true" />
+    <Button id="retryButton" text="Get New Code" translation="[490, 540]" visible="false" />
+    <Label id="emailSignInLabel" text="Sign in with email instead" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="1280" translation="[0, 630]" />
+  </children>
+</component>

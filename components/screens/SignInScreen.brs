@@ -4,6 +4,8 @@ sub init()
 
     m.signInTask = CreateObject("roSGNode", "HttpTask")
     m.signInTask.observeField("response", "onSignInResponse")
+    m.signInTask.functionName = "go"
+    m.signInTask.control = "RUN"
 
     m.top.findNode("emailField").setFocus(true)
     updateFocusBorders()
@@ -121,6 +123,9 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         else if m.focusedField = "password"
             m.focusedField = "button"
             updateFocusBorders()
+            return true
+        else if m.focusedField = "button"
+            m.top.useActivationCode = true
             return true
         end if
     end if
