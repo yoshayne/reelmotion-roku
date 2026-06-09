@@ -74,14 +74,26 @@ sub onPollTaskResult()
 
     if result = "activated"
         sessionToken = m.pollTask.sessionToken
-        print "ActivationScreen: session token = " + sessionToken
-        m.top.findNode("instrLabel").text = "Activating..."
+        if sessionToken = invalid then sessionToken = ""
+
+        print "ActivationScreen: session token received from PollTask"
+        m.top.findNode("instrLabel").text = "Activation complete. Loading..."
         m.top.findNode("spinner").visible = true
-        ' Signal MainScene — it will pick up the token from registry via timer
+
+        ' SceneGraph navigation must happen on the render thread. A Task should
+        ' publish data to fields, this component should copy that data to its
+        ' interface, and the parent scene should observe this event field.
         m.top.sessionToken = sessionToken
         m.top.activationComplete = true
     else if result = "expired"
         showError("Code expired. Press OK to get a new code.")
+    end if
+end sub
+
+sub stopPolling()
+    if m.pollTask <> invalid
+        m.pollTask.active = false
+        m.pollTask = invalid
     end if
 end sub
 
@@ -97,10 +109,7 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     if press and key = "OK"
         retryBtn = m.top.findNode("retryButton")
         if retryBtn <> invalid and retryBtn.visible = true
-            if m.pollTask <> invalid
-                m.pollTask.active = false
-                m.pollTask = invalid
-            end if
+            stopPolling()
             requestCode()
             return true
         end if
