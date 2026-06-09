@@ -5,6 +5,7 @@
     <field id="sessionToken" type="string" />
     <field id="activationComplete" type="boolean" value="false" />
     <field id="codeExpired" type="boolean" value="false" />
+    <field id="logMessage" type="string" alwaysNotify="true" />
   </interface>
   <script type="text/brightscript" uri="pkg:/components/tasks/PollTask.brs" />
 </component>

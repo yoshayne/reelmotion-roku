@@ -3,6 +3,7 @@ sub init()
     m.top.sessionToken = ""
     m.top.activationComplete = false
     m.top.codeExpired = false
+    m.top.logMessage = "PollTask: initialized"
 end sub
 
 sub runPoll()
@@ -10,11 +11,11 @@ sub runPoll()
     baseUrl = "https://reelmotionapp.com"
 
     if deviceToken = invalid or deviceToken = ""
-        print "PollTask: missing device token; cannot start polling"
+        logDebug("PollTask: missing device token; cannot start polling")
         return
     end if
 
-    print "PollTask: started polling with device token"
+    logDebug("PollTask: started polling")
 
     while true
         ' Wait 5 seconds between polls.
@@ -24,8 +25,8 @@ sub runPoll()
         responseCode = response.code
         responseBody = response.body
 
-        print "PollTask: poll response code = " + str(responseCode).trim()
-        print "PollTask: poll response body = " + responseBody
+        logDebug("PollTask: poll response code = " + str(responseCode).trim())
+        logDebug("PollTask: poll response body = " + truncateForLog(responseBody, 160))
 
         if responseBody <> ""
             json = ParseJson(responseBody)
@@ -38,22 +39,26 @@ sub runPoll()
                         sec = CreateObject("roRegistrySection", "reelmotion")
                         sec.Write("session_token", sessionToken)
                         sec.Flush()
+                        logDebug("PollTask: session token saved to registry")
+                    else
+                        logDebug("PollTask: activated response did not include session_token")
                     end if
 
                     m.top.sessionToken = sessionToken
                     m.top.activationComplete = true
                     return
                 else if json.status = "expired"
+                    logDebug("PollTask: activation code expired")
                     m.top.codeExpired = true
                     return
                 else
-                    print "PollTask: activation still pending"
+                    logDebug("PollTask: activation status = " + json.status)
                 end if
             else
-                print "PollTask: could not parse poll response JSON"
+                logDebug("PollTask: could not parse poll response JSON")
             end if
         else
-            print "PollTask: empty response; polling will retry"
+            logDebug("PollTask: empty response; polling will retry")
         end if
     end while
 end sub
@@ -73,22 +78,22 @@ function postPollRequest(baseUrl as String, deviceToken as String) as Object
     url.SetRequest("POST")
 
     body = FormatJson({ device_token: deviceToken })
-    print "PollTask: posting to " + baseUrl + "/api/auth/device/poll"
+    logDebug("PollTask: posting to " + baseUrl + "/api/auth/device/poll")
 
     if url.AsyncPostFromString(body) <> true
-        print "PollTask: AsyncPostFromString failed to start: " + url.GetFailureReason()
+        logDebug("PollTask: AsyncPostFromString failed to start: " + url.GetFailureReason())
         return makePollResponse(-1, "")
     end if
 
     urlEvent = wait(30000, port)
     if urlEvent = invalid
         url.AsyncCancel()
-        print "PollTask: poll request timed out"
+        logDebug("PollTask: poll request timed out")
         return makePollResponse(-1, "")
     end if
 
     if type(urlEvent) <> "roUrlEvent"
-        print "PollTask: unexpected poll event type = " + type(urlEvent)
+        logDebug("PollTask: unexpected poll event type = " + type(urlEvent))
         return makePollResponse(-1, "")
     end if
 
@@ -97,7 +102,7 @@ function postPollRequest(baseUrl as String, deviceToken as String) as Object
 
     failureReason = urlEvent.GetFailureReason()
     if failureReason <> invalid and failureReason <> ""
-        print "PollTask: poll failure reason = " + failureReason
+        logDebug("PollTask: poll failure reason = " + failureReason)
     end if
 
     return makePollResponse(urlEvent.GetResponseCode(), responseBody)
@@ -108,4 +113,15 @@ function makePollResponse(responseCode as Integer, responseBody as String) as Ob
     response.code = responseCode
     response.body = responseBody
     return response
+end function
+
+sub logDebug(message as String)
+    print message
+    m.top.logMessage = message
+end sub
+
+function truncateForLog(value as String, maxLength as Integer) as String
+    if value = invalid then return ""
+    if len(value) <= maxLength then return value
+    return left(value, maxLength) + "..."
 end function
