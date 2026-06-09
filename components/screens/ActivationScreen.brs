@@ -35,8 +35,8 @@ sub onActivationResult()
     code = m.activationTask.responseCode
     json = m.activationTask.responseJson
 
-    print "ActivationScreen: ActivationTask result = " + result
-    appendDebugLog("ActivationScreen: activation task result = " + result)
+    print "ActivationScreen: task done, HTTP code = " + str(code)
+    appendDebugLog("ActivationScreen: activation code HTTP " + str(code).trim())
 
     if result = "success" and json <> invalid and json.code <> invalid and json.device_token <> invalid
         m.deviceToken = json.device_token
@@ -47,13 +47,8 @@ sub onActivationResult()
         m.top.findNode("spinner").visible = true
         startPolling()
     else
-        errorMessage = m.activationTask.errorMessage
-        if errorMessage = invalid or errorMessage = ""
-            errorMessage = "HTTP " + str(code).trim()
-        end if
-
-        appendDebugLog("ActivationScreen: failed to get activation code: " + errorMessage)
-        showError("Could not get activation code. " + errorMessage + ". Press OK to retry.")
+        appendDebugLog("ActivationScreen: failed to get activation code")
+        showError("Error: HTTP " + str(code).trim() + " — could not get activation code. Press OK to retry.")
     end if
 end sub
 
