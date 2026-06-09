@@ -5,6 +5,7 @@
     <field id="status" type="string" />
     <field id="sessionToken" type="string" />
     <field id="active" type="boolean" />
+    <field id="taskResult" type="string" alwaysNotify="true" />
   </interface>
   <script type="text/brightscript" uri="pkg:/components/tasks/PollTask.brs" />
 </component>

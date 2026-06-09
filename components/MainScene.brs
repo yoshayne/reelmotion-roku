@@ -141,14 +141,48 @@ sub ShowActivationScreen()
     screen = CreateObject("roSGNode", "ActivationScreen")
     screen.observeField("activationComplete", "onActivationComplete")
     ShowScreen(screen)
+    startActivationTimer()
+end sub
+
+sub startActivationTimer()
+    if m.activationTimer <> invalid
+        m.activationTimer.control = "stop"
+        m.activationTimer = invalid
+    end if
+    m.activationTimer = CreateObject("roSGNode", "Timer")
+    m.activationTimer.duration = 2
+    m.activationTimer.repeat = true
+    m.activationTimer.observeField("fire", "onActivationTimerFire")
+    m.activationTimer.control = "start"
+    print "MainScene: activation timer started"
+end sub
+
+sub onActivationTimerFire()
+    sec = CreateObject("roRegistrySection", "reelmotion")
+    if sec.Exists("device_token")
+        token = sec.Read("device_token")
+        if token <> invalid and token <> "" and token <> "invalid"
+            print "MainScene: timer found token in registry, navigating to home"
+            m.activationTimer.control = "stop"
+            m.activationTimer = invalid
+            m.storedToken = token
+            CloseScreen()
+            ShowHomeScreen()
+        end if
+    end if
 end sub
 
 sub onActivationComplete()
+    ' Belt-and-suspenders: if the timer hasn't fired yet and the field
+    ' observer fires first, navigate immediately using the token on the screen.
+    if m.activationTimer <> invalid
+        m.activationTimer.control = "stop"
+        m.activationTimer = invalid
+    end if
     if m.currentScreen = invalid then return
-    ' Read the session token the activation screen saved
     token = m.currentScreen.sessionToken
-    print "MainScene: activation complete, token = " + token
-    if token <> invalid and token <> ""
+    print "MainScene: activationComplete field fired, token = " + token
+    if token <> invalid and token <> "" and token <> "invalid"
         m.storedToken = token
     end if
     CloseScreen()
@@ -250,6 +284,10 @@ sub onScreenClose()
 end sub
 
 sub onSignedOut()
+    if m.activationTimer <> invalid
+        m.activationTimer.control = "stop"
+        m.activationTimer = invalid
+    end if
     ' Clear all screens and go to activation
     while m.screenStack.count() > 0
         old = m.screenStack.pop()

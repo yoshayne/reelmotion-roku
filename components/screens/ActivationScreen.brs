@@ -36,11 +36,11 @@ sub onActivationDone()
     if code = 200 and json <> invalid and json.code <> invalid
         m.deviceToken = json.device_token
         m.top.findNode("codeLabel").text = json.code
-        m.top.findNode("instrLabel").text = "Go to reelmotionapp.com/activate on your phone or computer and enter this code"
-        m.top.findNode("spinner").visible = false
+        m.top.findNode("instrLabel").text = "Waiting for activation..." + Chr(10) + "Go to reelmotionapp.com/activate and enter this code"
+        m.top.findNode("spinner").visible = true
         startPolling()
     else
-        showError("Error: HTTP " + str(code).trim() + " — could not get activation code. Tap to retry.")
+        showError("Error: HTTP " + str(code).trim() + " — could not get activation code. Press OK to retry.")
     end if
 end sub
 
@@ -51,6 +51,7 @@ sub startPolling()
     end if
 
     m.pollTask = CreateObject("roSGNode", "PollTask")
+    m.pollTask.observeField("taskResult", "onPollTaskResult")
     m.pollTask.observeField("status", "onPollStatus")
     m.pollTask.deviceToken = m.deviceToken
     m.pollTask.active = true
@@ -62,39 +63,29 @@ sub onPollStatus()
     status = m.pollTask.status
     print "ActivationScreen: poll status = " + status
 
-    if status = "activated"
-        sessionToken = m.pollTask.sessionToken
-        print "ActivationScreen: session token received = " + sessionToken
-        m.top.sessionToken = sessionToken
-        if sessionToken <> invalid and sessionToken <> ""
-            saveToken(sessionToken)
-        else
-            ' Token missing — navigate to home anyway, token will be re-requested on next launch
-            m.top.activationComplete = true
-        end if
+    if status = "pending"
+        m.top.findNode("instrLabel").text = "Waiting for activation..." + Chr(10) + "Go to reelmotionapp.com/activate and enter this code"
     else if status = "expired"
         showError("Code expired. Press OK to get a new code.")
     end if
 end sub
 
-sub saveToken(token as String)
-    context = CreateObject("roSGNode", "Node")
-    context.addFields({
-        parameters: {
-            command: "write",
-            section: "reelmotion",
-            key: "device_token",
-            value: token
-        },
-        response: {}
-    })
-    context.observeField("response", "onTokenSaved")
-    m.registryTask.request = {context: context}
-end sub
+sub onPollTaskResult()
+    if m.pollTask = invalid then return
+    result = m.pollTask.taskResult
+    print "ActivationScreen: taskResult = " + result
 
-sub onTokenSaved()
-    print "ActivationScreen: token saved, firing activationComplete"
-    m.top.activationComplete = true
+    if result = "activated"
+        sessionToken = m.pollTask.sessionToken
+        print "ActivationScreen: session token = " + sessionToken
+        m.top.findNode("instrLabel").text = "Activating..."
+        m.top.findNode("spinner").visible = true
+        ' Signal MainScene — it will pick up the token from registry via timer
+        m.top.sessionToken = sessionToken
+        m.top.activationComplete = true
+    else if result = "expired"
+        showError("Code expired. Press OK to get a new code.")
+    end if
 end sub
 
 sub showError(msg as String)
