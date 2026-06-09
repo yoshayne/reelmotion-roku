@@ -1,16 +1,14 @@
 sub init()
     m.httpTask = CreateObject("roSGNode", "HttpTask")
     m.httpTask.observeField("response", "onContentLoaded")
+    m.httpTask.functionName = "go"
+    m.httpTask.control = "RUN"
 
     m.top.observeField("authToken", "onAuthToken")
 
     rowList = m.top.findNode("rowList")
     rowList.observeField("itemSelected", "onItemSelected")
     rowList.observeField("rowItemFocused", "onRowItemFocused")
-
-    if m.top.authToken <> invalid and m.top.authToken <> ""
-        loadContent()
-    end if
 end sub
 
 sub onAuthToken()
