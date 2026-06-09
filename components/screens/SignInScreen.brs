@@ -4,6 +4,7 @@ sub init()
 
     m.signInTask = CreateObject("roSGNode", "HttpTask")
     m.signInTask.observeField("response", "onSignInResponse")
+    m.signInTask.control = "RUN"
 
     emailField = m.top.findNode("emailField")
     if emailField <> invalid then emailField.setFocus(true)

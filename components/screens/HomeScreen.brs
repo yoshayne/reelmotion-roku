@@ -1,6 +1,7 @@
 sub init()
     m.httpTask = CreateObject("roSGNode", "HttpTask")
     m.httpTask.observeField("response", "onContentLoaded")
+    m.httpTask.control = "RUN"
 
     m.top.observeField("authToken", "onAuthToken")
 

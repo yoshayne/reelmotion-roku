@@ -1,6 +1,7 @@
 sub init()
     m.httpTask = CreateObject("roSGNode", "HttpTask")
     m.httpTask.observeField("response", "onHttpResponse")
+    m.httpTask.control = "RUN"
 
     m.videoLoaded = false
     m.commentsLoaded = false

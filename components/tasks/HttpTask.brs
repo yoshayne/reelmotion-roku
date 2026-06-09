@@ -2,7 +2,6 @@ sub init()
     m.port = CreateObject("roMessagePort")
     m.top.observeField("request", m.port)
     m.top.functionName = "go"
-    m.top.control = "RUN"
 end sub
 
 sub go()
