@@ -8,7 +8,6 @@ sub init()
 
     rowList = m.top.findNode("rowList")
     rowList.observeField("itemSelected", "onItemSelected")
-    rowList.observeField("rowItemFocused", "onRowItemFocused")
 end sub
 
 sub onAuthToken()
@@ -119,10 +118,6 @@ sub onItemSelected()
     selected = rowList.focusedChild
     if selected = invalid then return
     m.top.selectedItem = selected
-end sub
-
-sub onRowItemFocused()
-    ' Could highlight nav items based on focus position
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean

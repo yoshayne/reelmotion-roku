@@ -3,12 +3,15 @@ end sub
 
 sub go()
     m.port = CreateObject("roMessagePort")
-    m.top.observeField("request", m.port)
 
-    ' Process a request that was set before this thread started
+    ' Check for a request set before this thread started — must happen BEFORE
+    ' observeField so the same request is never processed twice (once by this
+    ' check and once by the queued observer event).
     if m.top.request <> invalid
         doRequest(m.top.request)
     end if
+
+    m.top.observeField("request", m.port)
 
     while true
         msg = wait(0, m.port)
@@ -39,7 +42,6 @@ sub doRequest(req as Object)
 
     print "HttpTask: >>> " + UCase(method) + " " + url
 
-    ' Use a dedicated port for each transfer so it never conflicts with m.port
     xferPort = CreateObject("roMessagePort")
     urlXfer = CreateObject("roUrlTransfer")
     urlXfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
@@ -62,7 +64,6 @@ sub doRequest(req as Object)
         print "HttpTask: POST body = " + postBody
         ok = urlXfer.AsyncPostFromString(postBody)
     else
-        urlXfer.SetRequest("GET")
         if headers <> invalid
             for each key in headers
                 urlXfer.AddHeader(key, headers[key])

@@ -2,7 +2,8 @@ sub init()
     m.top.observeField("userData", "onUserData")
     m.top.observeField("subscriptionActive", "onSubscriptionActive")
 
-    m.top.findNode("signOutBtn").setFocus(true)
+    signOutBtn = m.top.findNode("signOutBtn")
+    if signOutBtn <> invalid then signOutBtn.setFocus(true)
 
     populateUI()
 end sub

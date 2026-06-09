@@ -7,7 +7,8 @@ sub init()
     m.signInTask.functionName = "go"
     m.signInTask.control = "RUN"
 
-    m.top.findNode("emailField").setFocus(true)
+    emailField = m.top.findNode("emailField")
+    if emailField <> invalid then emailField.setFocus(true)
     updateFocusBorders()
 end sub
 

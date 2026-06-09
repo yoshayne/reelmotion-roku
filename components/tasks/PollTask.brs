@@ -11,8 +11,6 @@ sub pollForActivation()
     print "PollTask: starting poll loop for token " + deviceToken
 
     while true
-        Sleep(5000)
-
         port = CreateObject("roMessagePort")
         url = CreateObject("roUrlTransfer")
         url.SetMessagePort(port)
@@ -56,5 +54,7 @@ sub pollForActivation()
                 print "PollTask: wait timed out or wrong event type: " + type(msg)
             end if
         end if
+
+        Sleep(5000)
     end while
 end sub
