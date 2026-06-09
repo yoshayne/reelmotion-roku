@@ -1,6 +1,5 @@
 sub init()
     m.top.functionName = "pollLoop"
-    m.top.control = "RUN"
     m.top.status = "pending"
     m.top.sessionToken = ""
 end sub

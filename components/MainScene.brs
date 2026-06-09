@@ -205,13 +205,31 @@ sub onDetailPlayRequested()
 end sub
 
 sub ShowPlayerScreen(videoData as Object)
+    ' PlayerScreen extends Scene so it must be appended directly to m.top,
+    ' not to the mainSceneId Rectangle like other screens.
     screen = CreateObject("roSGNode", "PlayerScreen")
-    if m.storedToken <> invalid
-        screen.authToken = m.storedToken
-    end if
-    screen.observeField("close", "onScreenClose")
-    ShowScreen(screen)
+    screen.observeField("close", "onPlayerClose")
+    m.top.appendChild(screen)
+    screen.visible = true
+    screen.setFocus(true)
+    m.playerScreen = screen
     screen.videoData = videoData
+end sub
+
+sub onPlayerClose()
+    if m.playerScreen <> invalid
+        m.playerScreen.visible = false
+        m.top.removeChild(m.playerScreen)
+        m.playerScreen = invalid
+    end if
+    prev = m.screenStack.Peek()
+    if prev <> invalid
+        prev.visible = true
+        prev.setFocus(true)
+    else if m.currentScreen <> invalid
+        m.currentScreen.visible = true
+        m.currentScreen.setFocus(true)
+    end if
 end sub
 
 sub ShowSettingsScreen()
