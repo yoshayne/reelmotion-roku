@@ -2,10 +2,10 @@
 <component name="PollTask" extends="Task">
   <interface>
     <field id="deviceToken" type="string" />
-    <field id="status" type="string" />
     <field id="sessionToken" type="string" />
-    <field id="active" type="boolean" />
-    <field id="taskResult" type="string" alwaysNotify="true" />
+    <field id="activationComplete" type="boolean" value="false" />
+    <field id="codeExpired" type="boolean" value="false" />
+    <field id="logMessage" type="string" alwaysNotify="true" />
   </interface>
   <script type="text/brightscript" uri="pkg:/components/tasks/PollTask.brs" />
 </component>
