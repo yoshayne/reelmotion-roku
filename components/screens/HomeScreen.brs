@@ -9,10 +9,6 @@ sub init()
     rowList = m.top.findNode("rowList")
     rowList.observeField("itemSelected", "onItemSelected")
     rowList.observeField("rowItemFocused", "onRowItemFocused")
-
-    if m.top.authToken <> invalid and m.top.authToken <> ""
-        loadContent()
-    end if
 end sub
 
 sub onAuthToken()
