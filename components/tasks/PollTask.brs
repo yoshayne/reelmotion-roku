@@ -67,9 +67,9 @@ end sub
 
 sub writeTokenToRegistry(token as String)
     if token = invalid or token = "" then return
-    print "PollTask: writing session token to registry"
+    print "PollTask: writing session_token to registry section reelmotion"
     sec = CreateObject("roRegistrySection", "reelmotion")
-    sec.Write("device_token", token)
+    sec.Write("session_token", token)
     sec.Flush()
     print "PollTask: registry write complete"
 end sub

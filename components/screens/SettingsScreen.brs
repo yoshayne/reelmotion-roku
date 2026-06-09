@@ -50,22 +50,10 @@ sub populateUI()
 end sub
 
 sub onSignOut()
-    ' Clear registry token
-    context = CreateObject("roSGNode", "Node")
-    context.addFields({
-        parameters: {
-            command: "delete",
-            section: "reelmotion",
-            key: "device_token",
-            value: ""
-        },
-        response: {}
-    })
-    context.observeField("response", "onTokenCleared")
-    m.registryTask.request = {context: context}
-end sub
-
-sub onTokenCleared()
+    ' Clear session_token from registry directly — must match key used by PollTask and MainScene
+    sec = CreateObject("roRegistrySection", "reelmotion")
+    sec.Delete("session_token")
+    sec.Flush()
     m.top.signedOut = true
 end sub
 

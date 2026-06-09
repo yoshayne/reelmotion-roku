@@ -1,7 +1,4 @@
 sub init()
-    m.registryTask = CreateObject("roSGNode", "RegistryTask")
-    m.registryTask.control = "RUN"
-
     m.activationTask = invalid
     m.deviceToken = ""
     m.pollTask = invalid
