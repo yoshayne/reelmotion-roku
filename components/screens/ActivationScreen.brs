@@ -1,131 +1,125 @@
 sub init()
-    m.httpTask = CreateObject("roSGNode", "HttpTask")
-    m.httpTask.observeField("response", "onHttpResponse")
-
-    m.registryTask = CreateObject("roSGNode", "RegistryTask")
-    m.registryTask.control = "RUN"
-
-    m.pendingRequest = ""
-    m.deviceToken = ""
+    m.activationTask = invalid
     m.pollTask = invalid
 
-    requestCode()
+    m.activationTask = CreateObject("roSGNode", "ActivationTask")
+    m.activationTask.observeField("code", "onCodeReceived")
+    m.activationTask.observeField("errorMessage", "onActivationError")
+    m.activationTask.functionName = "requestActivationCode"
+    m.activationTask.control = "RUN"
 end sub
 
-sub requestCode()
-    ' Reset UI
-    m.top.findNode("codeLabel").text = ""
-    m.top.findNode("errorLabel").visible = false
-    m.top.findNode("retryButton").visible = false
-    m.top.findNode("spinner").visible = true
-    m.top.findNode("instrLabel").text = "Requesting activation code..."
+sub onCodeReceived()
+    if m.activationTask = invalid then return
+    code = m.activationTask.code
+    if code = invalid or code = "" then return
 
-    m.pendingRequest = "requestCode"
-    m.httpTask.request = {
-        url: "https://www.reelmotionapp.com/api/auth/device/request-code",
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: "{}",
-        context: "requestCode"
-    }
-end sub
+    m.top.findNode("codeLabel").text = code
+    m.top.findNode("instrLabel").text = "Go to reelmotionapp.com/activate" + Chr(10) + "and enter this code"
+    m.top.findNode("spinner").visible = false
 
-sub onHttpResponse()
-    resp = m.httpTask.response
-    if resp = invalid then
-        showError("Network error. Please try again.")
-        return
-    end if
-
-    context = resp.context
-
-    if context = "requestCode"
-        if resp.code = 200
-            json = ParseJson(resp.content)
-            if json <> invalid and json.code <> invalid
-                m.deviceToken = json.device_token
-                m.top.findNode("codeLabel").text = json.code
-                m.top.findNode("instrLabel").text = "Go to reelmotionapp.com/activate on your phone or computer and enter this code"
-                m.top.findNode("spinner").visible = false
-                startPolling()
-            else
-                showError("Invalid response from server. Please try again.")
-            end if
-        else
-            showError("Could not get activation code (Error " + str(resp.code).trim() + "). Please try again.")
-        end if
+    deviceToken = m.activationTask.deviceToken
+    if deviceToken <> invalid and deviceToken <> ""
+        startPolling(deviceToken)
     end if
 end sub
 
-sub startPolling()
+sub onActivationError()
+    if m.activationTask = invalid then return
+    errMsg = m.activationTask.errorMessage
+    if errMsg = invalid or errMsg = "" then return
+    showError(errMsg)
+end sub
+
+sub startPolling(deviceToken as String)
     if m.pollTask <> invalid
-        m.pollTask.active = false
+        m.pollTask.control = "STOP"
         m.pollTask = invalid
     end if
 
     m.pollTask = CreateObject("roSGNode", "PollTask")
-    m.pollTask.observeField("status", "onPollStatus")
-    m.pollTask.deviceToken = m.deviceToken
-    m.pollTask.active = true
+    m.pollTask.observeField("sessionToken", "onSessionTokenReceived")
+    m.pollTask.observeField("codeExpired", "onCodeExpired")
+    m.pollTask.deviceToken = deviceToken
+    m.pollTask.functionName = "pollForActivation"
     m.pollTask.control = "RUN"
 end sub
 
-sub onPollStatus()
+sub onSessionTokenReceived()
     if m.pollTask = invalid then return
-    status = m.pollTask.status
+    token = m.pollTask.sessionToken
+    if token = invalid or token = "" then return
 
-    if status = "activated"
-        sessionToken = m.pollTask.sessionToken
-        if sessionToken <> invalid and sessionToken <> ""
-            saveToken(sessionToken)
-        end if
-    else if status = "expired"
-        showError("Code expired. Please get a new code.")
-    end if
+    sec = CreateObject("roRegistrySection", "reelmotion")
+    sec.Write("session_token", token)
+    sec.Flush()
+    print "ActivationScreen: session token saved to registry"
+
+    m.top.findNode("instrLabel").text = "Activation complete. Loading..."
+    m.top.findNode("spinner").visible = true
+
+    m.top.sessionToken = token
+    m.top.activationComplete = true
 end sub
 
-sub saveToken(token as String)
-    context = CreateObject("roSGNode", "Node")
-    context.addFields({
-        parameters: {
-            command: "write",
-            section: "reelmotion",
-            key: "device_token",
-            value: token
-        },
-        response: {}
-    })
-    context.observeField("response", "onTokenSaved")
-    m.registryTask.request = {context: context}
-end sub
-
-sub onTokenSaved()
-    m.top.goHome = true
+sub onCodeExpired()
+    if m.pollTask = invalid then return
+    if m.pollTask.codeExpired <> true then return
+    showError("Code expired. Press OK to get a new code.")
 end sub
 
 sub showError(msg as String)
     m.top.findNode("spinner").visible = false
+    m.top.findNode("codeLabel").text = ""
+    m.top.findNode("instrLabel").text = ""
     m.top.findNode("errorLabel").text = msg
     m.top.findNode("errorLabel").visible = true
     m.top.findNode("retryButton").visible = true
     m.top.findNode("retryButton").setFocus(true)
 end sub
 
-sub onRetrySelected()
+sub retryActivation()
     if m.pollTask <> invalid
-        m.pollTask.active = false
+        m.pollTask.control = "STOP"
         m.pollTask = invalid
     end if
-    requestCode()
+    if m.activationTask <> invalid
+        m.activationTask.control = "STOP"
+        m.activationTask = invalid
+    end if
+
+    m.top.findNode("codeLabel").text = ""
+    m.top.findNode("instrLabel").text = "Requesting activation code..."
+    m.top.findNode("errorLabel").visible = false
+    m.top.findNode("retryButton").visible = false
+    m.top.findNode("spinner").visible = true
+
+    m.activationTask = CreateObject("roSGNode", "ActivationTask")
+    m.activationTask.observeField("code", "onCodeReceived")
+    m.activationTask.observeField("errorMessage", "onActivationError")
+    m.activationTask.functionName = "requestActivationCode"
+    m.activationTask.control = "RUN"
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
-    if press and key = "OK"
+    if not press then return false
+
+    if key = "OK"
         retryBtn = m.top.findNode("retryButton")
         if retryBtn <> invalid and retryBtn.visible = true
-            onRetrySelected()
+            retryActivation()
             return true
         end if
     end if
+
+    ' Only switch to email sign-in when retryButton is focused and user presses down
+    if key = "down"
+        retryBtn = m.top.findNode("retryButton")
+        if retryBtn <> invalid and retryBtn.visible = true and retryBtn.hasFocus()
+            m.top.useEmailSignIn = true
+            return true
+        end if
+    end if
+
     return false
 end function

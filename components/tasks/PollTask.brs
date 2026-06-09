@@ -1,49 +1,60 @@
 sub init()
-    m.top.functionName = "pollLoop"
-    m.top.status = "pending"
-    m.top.sessionToken = ""
 end sub
 
-sub pollLoop()
-    while m.top.active = true
-        deviceToken = m.top.deviceToken
-        if deviceToken = invalid or deviceToken = ""
-            sleep(5000)
+sub pollForActivation()
+    deviceToken = m.top.deviceToken
+    if deviceToken = invalid or deviceToken = ""
+        print "PollTask: no device token, aborting"
+        return
+    end if
+
+    print "PollTask: starting poll loop for token " + deviceToken
+
+    while true
+        Sleep(5000)
+
+        port = CreateObject("roMessagePort")
+        url = CreateObject("roUrlTransfer")
+        url.SetMessagePort(port)
+        url.SetUrl("https://reelmotionapp.com/api/auth/device/poll")
+        url.SetCertificatesFile("common:/certs/ca-bundle.crt")
+        url.InitClientCertificates()
+        url.EnableEncodings(true)
+        url.RetainBodyOnError(true)
+        url.AddHeader("Content-Type", "application/json")
+        url.AddHeader("Accept", "application/json")
+        url.SetRequest("POST")
+
+        body = FormatJson({device_token: deviceToken})
+
+        if not url.AsyncPostFromString(body)
+            print "PollTask: request failed to start: " + url.GetFailureReason()
         else
-            doPost(deviceToken)
-            if m.top.status = "activated" or m.top.status = "expired"
-                return
+            msg = wait(30000, port)
+            if type(msg) = "roUrlEvent"
+                responseCode = msg.GetResponseCode()
+                responseBody = msg.GetString()
+
+                print "PollTask: response code = " + str(responseCode)
+                print "PollTask: response body = " + responseBody
+
+                if responseBody <> invalid and responseBody <> ""
+                    json = ParseJson(responseBody)
+                    if json <> invalid and json.status <> invalid
+                        if json.status = "activated"
+                            sessionToken = json.session_token
+                            if sessionToken = invalid then sessionToken = ""
+                            m.top.sessionToken = sessionToken
+                            return
+                        else if json.status = "expired"
+                            m.top.codeExpired = true
+                            return
+                        end if
+                    end if
+                end if
+            else
+                print "PollTask: wait timed out or wrong event type: " + type(msg)
             end if
-            sleep(5000)
         end if
     end while
-end sub
-
-sub doPost(deviceToken as String)
-    urlXfer = CreateObject("roUrlTransfer")
-    urlXfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
-    urlXfer.InitClientCertificates()
-    urlXfer.SetUrl("https://www.reelmotionapp.com/api/auth/device/poll")
-    urlXfer.SetRequest("POST")
-    urlXfer.AddHeader("Content-Type", "application/json")
-
-    body = FormatJson({device_token: deviceToken})
-    responseStr = urlXfer.PostToString(body)
-
-    if responseStr <> invalid and responseStr <> ""
-        json = ParseJson(responseStr)
-        if json <> invalid
-            status = json.status
-            if status = "activated"
-                if json.session_token <> invalid
-                    m.top.sessionToken = json.session_token
-                end if
-                m.top.status = "activated"
-            else if status = "expired"
-                m.top.status = "expired"
-            else
-                m.top.status = "pending"
-            end if
-        end if
-    end if
 end sub

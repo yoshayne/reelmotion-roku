@@ -34,7 +34,7 @@ sub loadData(contentId as String)
     m.pendingVideoId = contentId
 
     m.httpTask.request = {
-        url: "https://www.reelmotionapp.com/api/watch/" + contentId,
+        url: "https://reelmotionapp.com/api/watch/" + contentId,
         method: "GET",
         headers: headers,
         body: "",
@@ -66,7 +66,7 @@ sub onHttpResponse()
             headers = {Authorization: "Bearer " + token}
         end if
         m.httpTask.request = {
-            url: "https://www.reelmotionapp.com/api/videos/" + m.pendingVideoId + "/comments",
+            url: "https://reelmotionapp.com/api/videos/" + m.pendingVideoId + "/comments",
             method: "GET",
             headers: headers,
             body: "",

@@ -1,275 +1,326 @@
 sub init()
-    m.screenStack = []
-    m.currentScreen = invalid
+    m.storedToken = readSessionToken()
+    m.userData = invalid
+    m.subscriptionActive = false
+    m.signInScreen = invalid
+    m.homeScreen = invalid
+    m.detailScreen = invalid
+    m.settingsScreen = invalid
+    m.playerScreen = invalid
 
-    m.registryTask = CreateObject("roSGNode", "RegistryTask")
-    m.registryTask.control = "RUN"
+    m.verifyTask = CreateObject("roSGNode", "HttpTask")
+    m.verifyTask.observeField("response", "onVerifyResponse")
+    m.verifyTask.functionName = "go"
+    m.verifyTask.control = "RUN"
 
-    m.top.observeField("launchArgs", "onLaunchArgs")
+    m.activationScreen = invalid
 
-    CheckStoredToken()
-end sub
-
-sub onLaunchArgs()
-    ' Handle deep link args if needed
-    args = m.top.launchArgs
-    if args <> invalid
-        ' future: handle contentId deep links
+    if m.storedToken <> invalid and m.storedToken <> ""
+        print "MainScene: session token found, showing home screen"
+        showHomeScreen()
+        verifyToken(m.storedToken)
+    else
+        print "MainScene: no session token found, showing sign-in screen"
+        showSignInScreen()
     end if
 end sub
 
-sub CheckStoredToken()
-    ' Use RegistryTask to read device_token
-    context = CreateObject("roSGNode", "Node")
-    context.addFields({
-        parameters: {
-            command: "read",
-            section: "reelmotion",
-            key: "device_token",
-            value: ""
-        },
-        response: {}
-    })
-    context.observeField("response", "onTokenRead")
-    m.registryTask.request = {context: context}
+function readSessionToken() as String
+    sec = CreateObject("roRegistrySection", "reelmotion")
+    if sec.Exists("session_token")
+        token = sec.Read("session_token")
+        if token <> invalid
+            return token
+        end if
+    end if
+    return ""
+end function
+
+sub clearScreenStack()
+    children = m.top.getChildren(-1, 0)
+    for each child in children
+        m.top.removeChild(child)
+    end for
+
+    m.signInScreen = invalid
+    m.activationScreen = invalid
+    m.homeScreen = invalid
+    m.detailScreen = invalid
+    m.settingsScreen = invalid
+    m.playerScreen = invalid
 end sub
 
-sub onTokenRead()
-    context = m.registryTask.request.context
-    if context = invalid then
-        ShowActivationScreen()
+sub showSignInScreen()
+    clearScreenStack()
+
+    signIn = CreateObject("roSGNode", "SignInScreen")
+    signIn.observeField("signInComplete", "onSignInComplete")
+    signIn.observeField("useActivationCode", "onUseActivationCode")
+    m.top.appendChild(signIn)
+    signIn.visible = true
+    signIn.setFocus(true)
+    m.signInScreen = signIn
+
+    print "MainScene: showing sign-in screen"
+end sub
+
+sub onSignInComplete()
+    if m.signInScreen = invalid then return
+    if m.signInScreen.signInComplete <> true then return
+
+    token = m.signInScreen.sessionToken
+    if token = invalid or token = ""
+        token = readSessionToken()
+    end if
+
+    if token = invalid or token = ""
+        print "MainScene: signInComplete fired without a session token"
         return
     end if
-    resp = context.response
-    token = ""
-    if resp <> invalid and resp.DoesExist("regVal")
-        token = resp.regVal
-    end if
 
-    if token = invalid or token = "" or token = "invalid"
-        ShowActivationScreen()
-    else
-        m.storedToken = token
-        VerifyToken(token)
-    end if
+    print "MainScene: sign-in complete, navigating to home"
+    m.storedToken = token
+    showHomeScreen()
+    verifyToken(token)
 end sub
 
-sub VerifyToken(token as String)
-    m.httpTask = CreateObject("roSGNode", "HttpTask")
-    m.httpTask.observeField("response", "onVerifyResponse")
-    m.httpTask.request = {
-        url: "https://www.reelmotionapp.com/api/auth/device/verify",
+sub onUseActivationCode()
+    if m.signInScreen = invalid then return
+    if m.signInScreen.useActivationCode <> true then return
+    print "MainScene: switching to activation screen"
+    showActivationScreen()
+end sub
+
+sub showActivationScreen()
+    clearScreenStack()
+
+    activation = CreateObject("roSGNode", "ActivationScreen")
+    activation.observeField("activationComplete", "onActivationComplete")
+    activation.observeField("useEmailSignIn", "onUseEmailSignIn")
+    m.top.appendChild(activation)
+    activation.visible = true
+    activation.setFocus(true)
+    m.activationScreen = activation
+
+    print "MainScene: showing activation screen"
+end sub
+
+sub onActivationComplete()
+    if m.activationScreen = invalid then return
+    if m.activationScreen.activationComplete <> true then return
+
+    token = m.activationScreen.sessionToken
+    if token = invalid or token = ""
+        token = readSessionToken()
+    end if
+
+    if token = invalid or token = ""
+        print "MainScene: activationComplete fired without a session token"
+        return
+    end if
+
+    print "MainScene: activation complete, navigating to home"
+    m.storedToken = token
+    showHomeScreen()
+    verifyToken(token)
+end sub
+
+sub onUseEmailSignIn()
+    if m.activationScreen = invalid then return
+    if m.activationScreen.useEmailSignIn <> true then return
+    print "MainScene: switching to sign-in screen"
+    showSignInScreen()
+end sub
+
+sub verifyToken(token as String)
+    m.verifyTask.request = {
+        url: "https://reelmotionapp.com/api/auth/device/verify",
         method: "GET",
-        headers: {
-            "Authorization": "Bearer " + token
-        },
+        headers: {Authorization: "Bearer " + token},
         body: "",
         context: "verify"
     }
 end sub
 
 sub onVerifyResponse()
-    resp = m.httpTask.response
-    if resp = invalid
-        ShowActivationScreen()
-        return
-    end if
+    resp = m.verifyTask.response
+    if resp = invalid then return
+    if resp.context <> "verify" then return
 
     if resp.code = 200
         json = ParseJson(resp.content)
         if json <> invalid
-            m.userData = json.user
-            m.subscriptionActive = (json.subscription <> invalid and json.subscription <> false)
-            ShowHomeScreen()
-        else
-            ClearToken()
-            ShowActivationScreen()
+            if json.subscription_active <> invalid
+                m.subscriptionActive = (json.subscription_active = true)
+                print "MainScene: subscription_active = " + (m.subscriptionActive).toStr()
+                if m.settingsScreen <> invalid
+                    m.settingsScreen.subscriptionActive = m.subscriptionActive
+                end if
+            end if
+            if json.user <> invalid
+                m.userData = json.user
+                if m.settingsScreen <> invalid
+                    m.settingsScreen.userData = m.userData
+                end if
+            end if
         end if
+    else if resp.code = 401
+        print "MainScene: verify returned 401, clearing token and showing sign-in"
+        sec = CreateObject("roRegistrySection", "reelmotion")
+        sec.Delete("session_token")
+        sec.Flush()
+        m.storedToken = ""
+        m.userData = invalid
+        m.subscriptionActive = false
+        showSignInScreen()
     else
-        ClearToken()
-        ShowActivationScreen()
+        print "MainScene: verify failed with code " + str(resp.code)
     end if
 end sub
 
-sub ClearToken()
-    context = CreateObject("roSGNode", "Node")
-    context.addFields({
-        parameters: {
-            command: "delete",
-            section: "reelmotion",
-            key: "device_token",
-            value: ""
-        },
-        response: {}
-    })
-    m.registryTask.request = {context: context}
-    m.storedToken = ""
+sub showHomeScreen()
+    print "MainScene: showing home screen"
+    clearScreenStack()
+
+    home = CreateObject("roSGNode", "HomeScreen")
+    if m.storedToken <> invalid and m.storedToken <> ""
+        home.authToken = m.storedToken
+    end if
+    home.observeField("selectedItem", "onHomeItemSelected")
+    home.observeField("goSettings", "onHomeGoSettings")
+    home.observeField("close", "onHomeClose")
+    m.top.appendChild(home)
+    home.visible = true
+    home.setFocus(true)
+    m.homeScreen = home
 end sub
 
-'--------------------------------------------------
-' Screen Stack Management
-'--------------------------------------------------
-
-sub ShowScreen(screen as Object)
-    if m.currentScreen <> invalid
-        m.screenStack.push(m.currentScreen)
-        m.currentScreen.visible = false
-    end if
-    m.currentScreen = screen
-    m.top.findNode("mainSceneId").appendChild(screen)
-    screen.visible = true
-    screen.setFocus(true)
-end sub
-
-sub CloseScreen()
-    if m.currentScreen <> invalid
-        m.top.findNode("mainSceneId").removeChild(m.currentScreen)
-        m.currentScreen = invalid
-    end if
-    if m.screenStack.count() > 0
-        m.currentScreen = m.screenStack.pop()
-        m.currentScreen.visible = true
-        m.currentScreen.setFocus(true)
-    end if
-end sub
-
-'--------------------------------------------------
-' Screen Factories
-'--------------------------------------------------
-
-sub ShowActivationScreen()
-    screen = CreateObject("roSGNode", "ActivationScreen")
-    screen.observeField("goHome", "onActivationGoHome")
-    ShowScreen(screen)
-end sub
-
-sub onActivationGoHome()
-    if m.currentScreen = invalid then return
-    goHome = m.currentScreen.goHome
-    if goHome = true
-        CloseScreen()
-        ' re-read token and go home
-        CheckStoredToken()
-    end if
-end sub
-
-sub ShowHomeScreen()
-    screen = CreateObject("roSGNode", "HomeScreen")
-    if m.storedToken <> invalid
-        screen.authToken = m.storedToken
-    end if
-    screen.observeField("selectedItem", "onHomeItemSelected")
-    screen.observeField("goSettings", "onHomeGoSettings")
-    screen.observeField("close", "onScreenClose")
-    ShowScreen(screen)
+sub onHomeClose()
+    print "MainScene: home closed"
 end sub
 
 sub onHomeItemSelected()
-    if m.currentScreen = invalid then return
-    item = m.currentScreen.selectedItem
+    if m.homeScreen = invalid then return
+    item = m.homeScreen.selectedItem
     if item = invalid then return
-    ShowDetailScreen(item)
+    showDetailScreen(item)
 end sub
 
 sub onHomeGoSettings()
-    if m.currentScreen = invalid then return
-    goSettings = m.currentScreen.goSettings
-    if goSettings = true
-        ShowSettingsScreen()
+    if m.homeScreen = invalid then return
+    if m.homeScreen.goSettings = true
+        showSettingsScreen()
     end if
 end sub
 
-sub ShowDetailScreen(item as Object)
-    screen = CreateObject("roSGNode", "DetailScreen")
-    if m.storedToken <> invalid
-        screen.authToken = m.storedToken
+sub showDetailScreen(item as Object)
+    detail = CreateObject("roSGNode", "DetailScreen")
+    if m.storedToken <> invalid and m.storedToken <> ""
+        detail.authToken = m.storedToken
     end if
-    screen.subscriptionActive = (m.subscriptionActive = true)
-    screen.observeField("close", "onScreenClose")
-    screen.observeField("playRequested", "onDetailPlayRequested")
-    m.detailScreen = screen
-    ShowScreen(screen)
-    ' Set contentId after show so observers are ready
+    detail.subscriptionActive = (m.subscriptionActive = true)
+    detail.observeField("close", "onDetailClose")
+    detail.observeField("playRequested", "onDetailPlayRequested")
+    m.top.appendChild(detail)
+    detail.visible = true
+    detail.setFocus(true)
+    m.detailScreen = detail
     if item.DoesExist("id")
-        screen.contentId = item.id
+        detail.contentId = item.id
+    end if
+end sub
+
+sub onDetailClose()
+    if m.detailScreen <> invalid
+        m.top.removeChild(m.detailScreen)
+        m.detailScreen = invalid
+    end if
+    if m.homeScreen <> invalid
+        m.homeScreen.visible = true
+        m.homeScreen.setFocus(true)
     end if
 end sub
 
 sub onDetailPlayRequested()
-    if m.currentScreen = invalid then return
-    play = m.currentScreen.playRequested
-    if play = true
-        videoData = m.currentScreen.videoData
-        ShowPlayerScreen(videoData)
+    if m.detailScreen = invalid then return
+    if m.detailScreen.playRequested = true
+        videoData = m.detailScreen.videoData
+        showPlayerScreen(videoData)
     end if
 end sub
 
-sub ShowPlayerScreen(videoData as Object)
-    ' PlayerScreen extends Scene so it must be appended directly to m.top,
-    ' not to the mainSceneId Rectangle like other screens.
-    screen = CreateObject("roSGNode", "PlayerScreen")
-    screen.observeField("close", "onPlayerClose")
-    m.top.appendChild(screen)
-    screen.visible = true
-    screen.setFocus(true)
-    m.playerScreen = screen
-    screen.videoData = videoData
+sub showPlayerScreen(videoData as Object)
+    player = CreateObject("roSGNode", "PlayerScreen")
+    player.observeField("close", "onPlayerClose")
+    m.top.appendChild(player)
+    player.visible = true
+    player.setFocus(true)
+    m.playerScreen = player
+    player.videoData = videoData
 end sub
 
 sub onPlayerClose()
     if m.playerScreen <> invalid
-        m.playerScreen.visible = false
         m.top.removeChild(m.playerScreen)
         m.playerScreen = invalid
     end if
-    prev = m.screenStack.Peek()
-    if prev <> invalid
-        prev.visible = true
-        prev.setFocus(true)
-    else if m.currentScreen <> invalid
-        m.currentScreen.visible = true
-        m.currentScreen.setFocus(true)
+    if m.detailScreen <> invalid
+        m.detailScreen.visible = true
+        m.detailScreen.setFocus(true)
+    else if m.homeScreen <> invalid
+        m.homeScreen.setFocus(true)
     end if
 end sub
 
-sub ShowSettingsScreen()
-    screen = CreateObject("roSGNode", "SettingsScreen")
+sub showSettingsScreen()
+    settings = CreateObject("roSGNode", "SettingsScreen")
+    settings.subscriptionActive = (m.subscriptionActive = true)
     if m.userData <> invalid
-        screen.userData = m.userData
+        settings.userData = m.userData
     end if
-    screen.subscriptionActive = (m.subscriptionActive = true)
-    screen.observeField("close", "onScreenClose")
-    screen.observeField("signedOut", "onSignedOut")
-    ShowScreen(screen)
+    settings.observeField("close", "onSettingsClose")
+    settings.observeField("signedOut", "onSignedOut")
+    m.top.appendChild(settings)
+    settings.visible = true
+    settings.setFocus(true)
+    m.settingsScreen = settings
 end sub
 
-sub onScreenClose()
-    CloseScreen()
+sub onSettingsClose()
+    if m.settingsScreen <> invalid
+        m.top.removeChild(m.settingsScreen)
+        m.settingsScreen = invalid
+    end if
+    if m.homeScreen <> invalid
+        m.homeScreen.setFocus(true)
+    end if
 end sub
 
 sub onSignedOut()
-    ' Clear all screens and go to activation
-    while m.screenStack.count() > 0
-        old = m.screenStack.pop()
-        m.top.findNode("mainSceneId").removeChild(old)
-    end while
-    if m.currentScreen <> invalid
-        m.top.findNode("mainSceneId").removeChild(m.currentScreen)
-        m.currentScreen = invalid
-    end if
+    print "MainScene: signed out, clearing registry and returning to sign-in"
+    sec = CreateObject("roRegistrySection", "reelmotion")
+    sec.Delete("session_token")
+    sec.Flush()
+
     m.storedToken = ""
     m.userData = invalid
     m.subscriptionActive = false
-    ShowActivationScreen()
+    showSignInScreen()
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
     if press and key = "back"
-        if m.screenStack.count() > 0
-            CloseScreen()
+        if m.playerScreen <> invalid
+            onPlayerClose()
             return true
-        else
-            return false
+        end if
+        if m.detailScreen <> invalid
+            onDetailClose()
+            return true
+        end if
+        if m.settingsScreen <> invalid
+            onSettingsClose()
+            return true
         end if
     end if
     return false

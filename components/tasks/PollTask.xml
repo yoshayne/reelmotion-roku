@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <component name="PollTask" extends="Task">
-  <interface>
-    <field id="deviceToken" type="string" />
-    <field id="status" type="string" />
-    <field id="sessionToken" type="string" />
-    <field id="active" type="boolean" />
-  </interface>
-  <script type="text/brightscript" uri="pkg:/components/tasks/PollTask.brs" />
+    <interface>
+        <field id="deviceToken" type="string" value="" />
+        <field id="sessionToken" type="string" value="" />
+        <field id="codeExpired" type="boolean" value="false" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/tasks/PollTask.brs" />
 </component>
