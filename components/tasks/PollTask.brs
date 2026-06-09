@@ -1,75 +1,107 @@
 sub init()
-    m.top.functionName = "pollLoop"
-    m.top.status = "pending"
-    m.top.taskResult = ""
+    m.top.functionName = "runPoll"
     m.top.sessionToken = ""
+    m.top.activationComplete = false
+    m.top.codeExpired = false
 end sub
 
-sub pollLoop()
-    while m.top.active = true
-        deviceToken = m.top.deviceToken
-        if deviceToken = invalid or deviceToken = ""
-            sleep(5000)
-        else
-            doPost(deviceToken)
-            if m.top.taskResult = "activated" or m.top.status = "expired"
-                return
+sub runPoll()
+    deviceToken = m.top.deviceToken
+    baseUrl = "https://reelmotionapp.com"
+
+    if deviceToken = invalid or deviceToken = ""
+        print "PollTask: missing device token; cannot start polling"
+        return
+    end if
+
+    print "PollTask: started polling with device token"
+
+    while true
+        ' Wait 5 seconds between polls.
+        sleep(5000)
+
+        response = postPollRequest(baseUrl, deviceToken)
+        responseCode = response.code
+        responseBody = response.body
+
+        print "PollTask: poll response code = " + str(responseCode).trim()
+        print "PollTask: poll response body = " + responseBody
+
+        if responseBody <> ""
+            json = ParseJson(responseBody)
+            if json <> invalid and json.status <> invalid
+                if json.status = "activated"
+                    sessionToken = json.session_token
+                    if sessionToken = invalid then sessionToken = ""
+
+                    if sessionToken <> ""
+                        sec = CreateObject("roRegistrySection", "reelmotion")
+                        sec.Write("session_token", sessionToken)
+                        sec.Flush()
+                    end if
+
+                    m.top.sessionToken = sessionToken
+                    m.top.activationComplete = true
+                    return
+                else if json.status = "expired"
+                    m.top.codeExpired = true
+                    return
+                else
+                    print "PollTask: activation still pending"
+                end if
+            else
+                print "PollTask: could not parse poll response JSON"
             end if
-            sleep(5000)
+        else
+            print "PollTask: empty response; polling will retry"
         end if
     end while
 end sub
 
-sub doPost(deviceToken as String)
-    urlXfer = CreateObject("roUrlTransfer")
-    urlXfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
-    urlXfer.InitClientCertificates()
-    urlXfer.EnableEncodings(true)
-    urlXfer.RetainBodyOnError(true)
-    urlXfer.SetConnectTimeout(30000)
-    urlXfer.SetUrl("https://reelmotionapp.com/api/auth/device/poll")
-    urlXfer.SetRequest("POST")
-    urlXfer.AddHeader("Content-Type", "application/json")
-    urlXfer.AddHeader("Accept", "application/json")
+function postPollRequest(baseUrl as String, deviceToken as String) as Object
+    port = CreateObject("roMessagePort")
+    url = CreateObject("roUrlTransfer")
+    url.SetMessagePort(port)
+    url.SetUrl(baseUrl + "/api/auth/device/poll")
+    url.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    url.InitClientCertificates()
+    url.EnableEncodings(true)
+    url.RetainBodyOnError(true)
+    url.SetConnectTimeout(30000)
+    url.AddHeader("Content-Type", "application/json")
+    url.AddHeader("Accept", "application/json")
+    url.SetRequest("POST")
 
-    body = FormatJson({device_token: deviceToken})
-    responseCode = urlXfer.PostFromString(body)
-    responseStr = urlXfer.GetToString()
+    body = FormatJson({ device_token: deviceToken })
+    print "PollTask: posting to " + baseUrl + "/api/auth/device/poll"
 
-    print "PollTask: poll response code = " + str(responseCode)
-    print "PollTask: poll response body = " + responseStr
-
-    if responseCode = 200 and responseStr <> invalid and responseStr <> ""
-        json = ParseJson(responseStr)
-        if json <> invalid
-            status = json.status
-            print "PollTask: status = " + status
-            if status = "activated"
-                token = json.session_token
-                if token = invalid then token = ""
-                m.top.sessionToken = token
-                m.top.status = "activated"
-                ' Write token to registry directly from task thread
-                writeTokenToRegistry(token)
-                ' Fire taskResult last — this is what the timer and observers watch
-                m.top.taskResult = "activated"
-            else if status = "expired"
-                m.top.status = "expired"
-                m.top.taskResult = "expired"
-            else
-                m.top.status = "pending"
-            end if
-        end if
-    else
-        print "PollTask: non-200 or empty response, will retry"
+    if url.AsyncPostFromString(body) <> true
+        print "PollTask: AsyncPostFromString failed to start: " + url.GetFailureReason()
+        return { code: -1, body: "" }
     end if
-end sub
 
-sub writeTokenToRegistry(token as String)
-    if token = invalid or token = "" then return
-    print "PollTask: writing session_token to registry section reelmotion"
-    sec = CreateObject("roRegistrySection", "reelmotion")
-    sec.Write("session_token", token)
-    sec.Flush()
-    print "PollTask: registry write complete"
-end sub
+    event = wait(30000, port)
+    if event = invalid
+        url.AsyncCancel()
+        print "PollTask: poll request timed out"
+        return { code: -1, body: "" }
+    end if
+
+    if type(event) <> "roUrlEvent"
+        print "PollTask: unexpected poll event type = " + type(event)
+        return { code: -1, body: "" }
+    end if
+
+    responseBody = event.GetString()
+    if responseBody = invalid then responseBody = ""
+
+    failureReason = event.GetFailureReason()
+    if failureReason <> invalid and failureReason <> ""
+        print "PollTask: poll failure reason = " + failureReason
+    end if
+
+    return {
+        code: event.GetResponseCode(),
+        body: responseBody
+    }
+end function
