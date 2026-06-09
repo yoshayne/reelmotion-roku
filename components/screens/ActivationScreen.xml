@@ -2,7 +2,8 @@
 <component name="ActivationScreen" extends="Group">
   <interface>
     <field id="close" type="boolean" alwaysNotify="true" />
-    <field id="goHome" type="boolean" alwaysNotify="true" />
+    <field id="activationComplete" type="boolean" alwaysNotify="true" />
+    <field id="sessionToken" type="string" />
   </interface>
   <script type="text/brightscript" uri="pkg:/components/screens/ActivationScreen.brs" />
   <children>

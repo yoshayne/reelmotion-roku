@@ -60,11 +60,17 @@ end sub
 sub onPollStatus()
     if m.pollTask = invalid then return
     status = m.pollTask.status
+    print "ActivationScreen: poll status = " + status
 
     if status = "activated"
         sessionToken = m.pollTask.sessionToken
+        print "ActivationScreen: session token received = " + sessionToken
+        m.top.sessionToken = sessionToken
         if sessionToken <> invalid and sessionToken <> ""
             saveToken(sessionToken)
+        else
+            ' Token missing — navigate to home anyway, token will be re-requested on next launch
+            m.top.activationComplete = true
         end if
     else if status = "expired"
         showError("Code expired. Press OK to get a new code.")
@@ -87,7 +93,8 @@ sub saveToken(token as String)
 end sub
 
 sub onTokenSaved()
-    m.top.goHome = true
+    print "ActivationScreen: token saved, firing activationComplete"
+    m.top.activationComplete = true
 end sub
 
 sub showError(msg as String)

@@ -139,18 +139,20 @@ end sub
 
 sub ShowActivationScreen()
     screen = CreateObject("roSGNode", "ActivationScreen")
-    screen.observeField("goHome", "onActivationGoHome")
+    screen.observeField("activationComplete", "onActivationComplete")
     ShowScreen(screen)
 end sub
 
-sub onActivationGoHome()
+sub onActivationComplete()
     if m.currentScreen = invalid then return
-    goHome = m.currentScreen.goHome
-    if goHome = true
-        CloseScreen()
-        ' re-read token and go home
-        CheckStoredToken()
+    ' Read the session token the activation screen saved
+    token = m.currentScreen.sessionToken
+    print "MainScene: activation complete, token = " + token
+    if token <> invalid and token <> ""
+        m.storedToken = token
     end if
+    CloseScreen()
+    ShowHomeScreen()
 end sub
 
 sub ShowHomeScreen()
