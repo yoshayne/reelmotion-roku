@@ -12,9 +12,9 @@
     <!-- Nav bar -->
     <Rectangle id="navBar" color="#111111" width="1280" height="70" translation="[0, 0]" />
     <Poster id="navLogo" uri="pkg:/images/logo.png" width="160" height="45" translation="[60, 12]" />
-    <Label id="navHome" text="Home" color="#DC2626" font="font:SmallSystemFont" translation="[880, 25]" />
-    <Label id="navMyList" text="My List" color="#9CA3AF" font="font:SmallSystemFont" translation="[960, 25]" />
-    <Label id="navSettings" text="Settings" color="#9CA3AF" font="font:SmallSystemFont" translation="[1060, 25]" />
+    <Label id="navHome" text="Home" color="#DC2626" font="font:SmallSystemFont" horizAlign="center" width="120" translation="[820, 25]" />
+    <Label id="navMyList" text="My List" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="120" translation="[960, 25]" />
+    <Label id="navSettings" text="Settings" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="120" translation="[1100, 25]" />
     <!-- Content rows -->
     <RowList id="rowList" translation="[0, 75]" itemComponentName="PosterCard" itemSize="[190, 300]" itemSpacing="[16, 0]" rowLabelOffset="[[60, 0]]" numRows="3" />
     <!-- Loading -->
