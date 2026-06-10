@@ -16,7 +16,7 @@
     <Label id="navMyList" text="My List" color="#9CA3AF" font="font:SmallSystemFont" translation="[960, 25]" />
     <Label id="navSettings" text="Settings" color="#9CA3AF" font="font:SmallSystemFont" translation="[1060, 25]" />
     <!-- Content rows -->
-    <RowList id="rowList" translation="[0, 75]" itemComponentName="PosterCard" itemSize="[190, 300]" itemSpacing="[16, 0]" rowLabelOffset="[60, 0]" numRows="3" />
+    <RowList id="rowList" translation="[0, 75]" itemComponentName="PosterCard" itemSize="[190, 300]" itemSpacing="[16, 0]" rowLabelOffset="[[60, 0]]" numRows="3" />
     <!-- Loading -->
     <BusySpinner id="spinner" translation="[610, 360]" visible="true" />
     <!-- Error -->

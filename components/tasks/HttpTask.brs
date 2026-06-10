@@ -40,7 +40,6 @@ sub doRequest(req as Object)
     urlXfer.InitClientCertificates()
     urlXfer.EnableEncodings(true)
     urlXfer.RetainBodyOnError(true)
-    urlXfer.SetConnectTimeout(60000)
     urlXfer.SetUrl(url)
     urlXfer.SetPort(xferPort)
 

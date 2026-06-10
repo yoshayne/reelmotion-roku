@@ -21,13 +21,13 @@
     <Label id="emailLabel" text="Email" color="#9CA3AF" font="font:SmallSystemFont" translation="[40, 215]" />
     <Rectangle id="emailBorder" color="#262626" width="560" height="56" translation="[40, 240]" />
     <Rectangle id="emailFocusBorder" color="#DC2626" width="560" height="56" translation="[40, 240]" visible="false" />
-    <TextEditBox id="emailField" width="540" height="40" translation="[50, 248]" hintText="Enter your email" hintTextColor="#6B7280" textColor="#FFFFFF" backgroundColor="#00000000" />
+    <TextEditBox id="emailField" width="540" height="40" translation="[50, 248]" hintText="Enter your email" hintTextColor="#6B7280" textColor="#FFFFFF" />
 
     <!-- Password label + input -->
     <Label id="passwordLabel" text="Password" color="#9CA3AF" font="font:SmallSystemFont" translation="[40, 310]" />
     <Rectangle id="passwordBorder" color="#262626" width="560" height="56" translation="[40, 335]" />
     <Rectangle id="passwordFocusBorder" color="#DC2626" width="560" height="56" translation="[40, 335]" visible="false" />
-    <TextEditBox id="passwordField" width="540" height="40" translation="[50, 343]" hintText="Enter your password" hintTextColor="#6B7280" secureMode="true" textColor="#FFFFFF" backgroundColor="#00000000" />
+    <TextEditBox id="passwordField" width="540" height="40" translation="[50, 343]" hintText="Enter your password" hintTextColor="#6B7280" secureMode="true" textColor="#FFFFFF" />
 
     <!-- Sign In button -->
     <Rectangle id="signInBtnBg" color="#DC2626" width="560" height="60" translation="[40, 415]" />
