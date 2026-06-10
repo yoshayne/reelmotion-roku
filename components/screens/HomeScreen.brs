@@ -92,10 +92,25 @@ end sub
 
 function makeVideoNode(video as Object) as Object
     item = CreateObject("roSGNode", "ContentNode")
-    item.title = video.title
-    item.HDPosterUrl = video.thumbnail
-    item.shortDescriptionLine1 = video.rating
-    item.shortDescriptionLine2 = video.duration
+
+    title = video.title
+    if title = invalid then title = ""
+    item.title = title
+
+    thumbnail = video.thumbnail
+    if thumbnail = invalid then thumbnail = ""
+    if Left(thumbnail, 1) = "/"
+        thumbnail = "https://reelmotionapp.com" + thumbnail
+    end if
+    item.HDPosterUrl = thumbnail
+
+    rating = video.rating
+    if rating = invalid then rating = ""
+    item.shortDescriptionLine1 = rating
+
+    duration = video.duration
+    if duration = invalid then duration = ""
+    item.shortDescriptionLine2 = duration
 
     ' Store custom fields
     item.addFields({
