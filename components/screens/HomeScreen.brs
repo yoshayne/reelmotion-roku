@@ -63,7 +63,17 @@ sub buildGrid(json as Object)
     rows = []
 
     allVideos = []
-    if json.videos <> invalid then allVideos = json.videos
+    if json.videos <> invalid and json.videos.count() > 0
+        allVideos = json.videos
+    else if json.categories <> invalid
+        for each cat in json.categories
+            if cat.videos <> invalid
+                for each video in cat.videos
+                    allVideos.push(video)
+                end for
+            end if
+        end for
+    end if
 
     allSeries = []
     if json.series <> invalid then allSeries = json.series
@@ -97,6 +107,7 @@ sub buildGrid(json as Object)
     movies = []
     for each video in allVideos
         if video.content_type = "movie" then movies.push(video)
+        if video.content_type = invalid and video.series_id = invalid then movies.push(video)
     end for
     if movies.count() > 0
         rows.push({ title: "Movies", videos: movies, isSeries: false })
@@ -153,6 +164,7 @@ function makeVideoNode(video as Object) as Object
     item.title = title
 
     thumbnail = video.thumbnail_url
+    if thumbnail = invalid or thumbnail = "" then thumbnail = video.thumbnail
     if thumbnail = invalid then thumbnail = ""
     if Left(thumbnail, 1) = "/"
         thumbnail = "https://reelmotionapp.com" + thumbnail
@@ -160,10 +172,17 @@ function makeVideoNode(video as Object) as Object
     item.HDPosterUrl = thumbnail
 
     rating = video.content_rating
+    if rating = invalid or rating = "" then rating = video.rating
     if rating = invalid then rating = ""
     item.shortDescriptionLine1 = rating
 
-    item.shortDescriptionLine2 = formatDuration(video.mux_duration)
+    if video.mux_duration <> invalid
+        item.shortDescriptionLine2 = formatDuration(video.mux_duration)
+    else if video.duration <> invalid
+        item.shortDescriptionLine2 = video.duration
+    else
+        item.shortDescriptionLine2 = ""
+    end if
 
     ' Store custom fields
     item.addFields({
