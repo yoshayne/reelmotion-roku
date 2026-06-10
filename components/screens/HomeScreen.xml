@@ -15,10 +15,8 @@
     <Label id="navHome" text="Home" color="#DC2626" font="font:SmallSystemFont" horizAlign="center" width="120" translation="[820, 25]" />
     <Label id="navMyList" text="My List" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="120" translation="[960, 25]" />
     <Label id="navSettings" text="Settings" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="120" translation="[1100, 25]" />
-    <!-- Debug -->
-    <Label id="debugLabel" text="HOME SCREEN LOADED" color="#FFFFFF" font="font:LargeBoldSystemFont" translation="[60, 150]" />
     <!-- Content rows -->
-    <RowList id="rowList" translation="[0, 75]" itemComponentName="PosterCard" itemSize="[190, 300]" itemSpacing="[16, 0]" numRows="5" />
+    <Group id="gridContainer" translation="[60, 90]" />
     <!-- Loading -->
     <BusySpinner id="spinner" translation="[610, 360]" visible="true" />
     <!-- Error -->

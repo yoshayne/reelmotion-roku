@@ -3,6 +3,7 @@
   <interface>
     <field id="itemContent" type="node" alwaysNotify="true" />
     <field id="focusPercent" type="float" alwaysNotify="true" />
+    <field id="isFocused" type="boolean" alwaysNotify="true" />
   </interface>
   <script type="text/brightscript" uri="pkg:/components/items/PosterCard.brs" />
   <children>

@@ -1,6 +1,16 @@
 sub init()
     m.top.observeField("itemContent", "onItemContent")
     m.top.observeField("focusPercent", "onFocusPercent")
+    m.top.observeField("isFocused", "onIsFocused")
+end sub
+
+sub onIsFocused()
+    focusBorder = m.top.findNode("focusBorder")
+    if m.top.isFocused
+        focusBorder.opacity = 1.0
+    else
+        focusBorder.opacity = 0.0
+    end if
 end sub
 
 sub onItemContent()
