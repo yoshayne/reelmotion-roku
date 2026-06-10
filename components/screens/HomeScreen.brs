@@ -62,16 +62,52 @@ sub buildGrid(json as Object)
 
     rows = []
 
+    allVideos = []
+    if json.videos <> invalid then allVideos = json.videos
+
+    allSeries = []
+    if json.series <> invalid then allSeries = json.series
+
     if json.continue_watching <> invalid and json.continue_watching.count() > 0
-        rows.push({ title: "Continue Watching", videos: json.continue_watching })
+        rows.push({ title: "Continue Watching", videos: json.continue_watching, isSeries: false })
     end if
 
-    if json.categories <> invalid
-        for each cat in json.categories
-            videos = []
-            if cat.videos <> invalid then videos = cat.videos
-            rows.push({ title: cat.name, videos: videos })
-        end for
+    newReleases = []
+    nowMs = (CreateObject("roDateTime")).AsSeconds() * 1000
+    sevenDaysMs = 7 * 24 * 60 * 60 * 1000
+    for each video in allVideos
+        createdAt = video.created_at
+        if createdAt <> invalid and createdAt <> ""
+            dt = CreateObject("roDateTime")
+            dt.FromISO8601String(createdAt)
+            createdMs = dt.AsSeconds() * 1000
+            if (nowMs - createdMs) < sevenDaysMs
+                newReleases.push(video)
+            end if
+        end if
+    end for
+    if newReleases.count() > 0
+        rows.push({ title: "New Releases", videos: newReleases, isSeries: false })
+    end if
+
+    if allSeries.count() > 0
+        rows.push({ title: "Series", videos: allSeries, isSeries: true })
+    end if
+
+    movies = []
+    for each video in allVideos
+        if video.content_type = "movie" then movies.push(video)
+    end for
+    if movies.count() > 0
+        rows.push({ title: "Movies", videos: movies, isSeries: false })
+    end if
+
+    clips = []
+    for each video in allVideos
+        if video.content_type = "clip" then clips.push(video)
+    end for
+    if clips.count() > 0
+        rows.push({ title: "Clips", videos: clips, isSeries: false })
     end if
 
     yOffset = 0
@@ -90,7 +126,11 @@ sub buildGrid(json as Object)
             video = row.videos[c]
             card = CreateObject("roSGNode", "PosterCard")
             card.translation = [c * m.colWidth, yOffset + 40]
-            card.itemContent = makeVideoNode(video)
+            if row.isSeries
+                card.itemContent = makeSeriesNode(video)
+            else
+                card.itemContent = makeVideoNode(video)
+            end if
             container.appendChild(card)
             rowCards.push(card)
         end for
@@ -112,25 +152,24 @@ function makeVideoNode(video as Object) as Object
     if title = invalid then title = ""
     item.title = title
 
-    thumbnail = video.thumbnail
+    thumbnail = video.thumbnail_url
     if thumbnail = invalid then thumbnail = ""
     if Left(thumbnail, 1) = "/"
         thumbnail = "https://reelmotionapp.com" + thumbnail
     end if
     item.HDPosterUrl = thumbnail
 
-    rating = video.rating
+    rating = video.content_rating
     if rating = invalid then rating = ""
     item.shortDescriptionLine1 = rating
 
-    duration = video.duration
-    if duration = invalid then duration = ""
-    item.shortDescriptionLine2 = duration
+    item.shortDescriptionLine2 = formatDuration(video.mux_duration)
 
     ' Store custom fields
     item.addFields({
         id: "",
-        is_free: false
+        is_free: false,
+        is_series: false
     })
     if video.id <> invalid
         item.id = video.id.toStr()
@@ -140,6 +179,52 @@ function makeVideoNode(video as Object) as Object
     end if
 
     return item
+end function
+
+function makeSeriesNode(series as Object) as Object
+    item = CreateObject("roSGNode", "ContentNode")
+
+    title = series.title
+    if title = invalid then title = ""
+    item.title = title
+
+    thumbnail = series.cover_image_url
+    if thumbnail = invalid or thumbnail = "" then thumbnail = series.thumbnail_url
+    if thumbnail = invalid then thumbnail = ""
+    if Left(thumbnail, 1) = "/"
+        thumbnail = "https://reelmotionapp.com" + thumbnail
+    end if
+    item.HDPosterUrl = thumbnail
+
+    rating = series.content_rating
+    if rating = invalid then rating = ""
+    item.shortDescriptionLine1 = rating
+
+    item.shortDescriptionLine2 = ""
+
+    ' Store custom fields
+    item.addFields({
+        id: "",
+        is_free: false,
+        is_series: true
+    })
+    if series.id <> invalid
+        item.id = series.id.toStr()
+    end if
+
+    return item
+end function
+
+function formatDuration(seconds as Dynamic) as String
+    if seconds = invalid then return ""
+    totalSeconds = Int(seconds)
+    hours = totalSeconds \ 3600
+    minutes = (totalSeconds mod 3600) \ 60
+    if hours > 0
+        return hours.toStr() + "h " + minutes.toStr() + "m"
+    else
+        return minutes.toStr() + "m"
+    end if
 end function
 
 sub moveFocus(newRow as Integer, newCol as Integer)
