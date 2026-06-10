@@ -57,7 +57,6 @@ sub showSignInScreen()
     signIn.observeField("signInComplete", "onSignInComplete")
     m.top.appendChild(signIn)
     signIn.visible = true
-    signIn.setFocus(true)
     m.signInScreen = signIn
 
     print "MainScene: showing sign-in screen"
