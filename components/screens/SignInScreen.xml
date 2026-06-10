@@ -3,44 +3,64 @@
   <interface>
     <field id="signInComplete" type="boolean" alwaysNotify="true" />
     <field id="sessionToken" type="string" />
-    <field id="useActivationCode" type="boolean" alwaysNotify="true" />
   </interface>
   <script type="text/brightscript" uri="pkg:/components/screens/SignInScreen.brs" />
   <children>
     <Rectangle id="bg" color="#000000" width="1280" height="720" />
 
-    <!-- Logo -->
-    <Poster id="logo" uri="pkg:/images/logo.png" width="280" height="80" translation="[500, 100]" />
+    <!-- Divider between the two columns -->
+    <Rectangle id="divider" color="#3F1414" width="2" height="620" translation="[650, 50]" />
 
-    <!-- Headline -->
-    <Label id="headlineLabel" text="Sign in to ReelMotion" color="#FFFFFF" font="font:MediumBoldSystemFont" horizAlign="center" width="1280" translation="[0, 210]" />
+    <!-- ===================== LEFT COLUMN: SIGN IN ===================== -->
+
+    <Poster id="logo" uri="pkg:/images/logo.png" width="280" height="80" translation="[40, 30]" />
+
+    <Label id="headlineLabel" text="Sign In" color="#FFFFFF" font="font:LargeBoldSystemFont" translation="[40, 140]" />
 
     <!-- Email label + input -->
-    <Label id="emailLabel" text="Email" color="#9CA3AF" font="font:SmallSystemFont" translation="[440, 290]" />
-    <Rectangle id="emailBorder" color="#374151" width="400" height="52" translation="[440, 310]" />
-    <Rectangle id="emailFocusBorder" color="#DC2626" width="400" height="52" translation="[440, 310]" visible="false" />
-    <TextEditBox id="emailField" width="388" height="40" translation="[446, 316]" hintText="you@example.com" hintTextColor="#6B7280" textColor="#FFFFFF" backgroundColor="#00000000" />
+    <Label id="emailLabel" text="Email" color="#9CA3AF" font="font:SmallSystemFont" translation="[40, 215]" />
+    <Rectangle id="emailBorder" color="#262626" width="560" height="56" translation="[40, 240]" />
+    <Rectangle id="emailFocusBorder" color="#DC2626" width="560" height="56" translation="[40, 240]" visible="false" />
+    <TextEditBox id="emailField" width="540" height="40" translation="[50, 248]" hintText="Enter your email" hintTextColor="#6B7280" textColor="#FFFFFF" backgroundColor="#00000000" />
 
     <!-- Password label + input -->
-    <Label id="passwordLabel" text="Password" color="#9CA3AF" font="font:SmallSystemFont" translation="[440, 378]" />
-    <Rectangle id="passwordBorder" color="#374151" width="400" height="52" translation="[440, 398]" />
-    <Rectangle id="passwordFocusBorder" color="#DC2626" width="400" height="52" translation="[440, 398]" visible="false" />
-    <TextEditBox id="passwordField" width="388" height="40" translation="[446, 404]" hintText="Password" hintTextColor="#6B7280" secureMode="true" textColor="#FFFFFF" backgroundColor="#00000000" />
+    <Label id="passwordLabel" text="Password" color="#9CA3AF" font="font:SmallSystemFont" translation="[40, 310]" />
+    <Rectangle id="passwordBorder" color="#262626" width="560" height="56" translation="[40, 335]" />
+    <Rectangle id="passwordFocusBorder" color="#DC2626" width="560" height="56" translation="[40, 335]" visible="false" />
+    <TextEditBox id="passwordField" width="540" height="40" translation="[50, 343]" hintText="Enter your password" hintTextColor="#6B7280" secureMode="true" textColor="#FFFFFF" backgroundColor="#00000000" />
 
     <!-- Sign In button -->
-    <Rectangle id="signInBtnBg" color="#DC2626" width="400" height="52" translation="[440, 476]" />
-    <Label id="signInBtnLabel" text="Sign In" color="#FFFFFF" font="font:MediumBoldSystemFont" horizAlign="center" width="400" translation="[440, 490]" />
+    <Rectangle id="signInBtnBg" color="#DC2626" width="560" height="60" translation="[40, 415]" />
+    <Rectangle id="signInBtnFocusBorder" color="#FFFFFF" width="560" height="60" translation="[40, 415]" visible="false" />
+    <Label id="signInBtnLabel" text="Sign In" color="#FFFFFF" font="font:MediumBoldSystemFont" horizAlign="center" vertAlign="center" width="560" height="60" translation="[40, 415]" />
 
     <!-- Sign Up hint -->
-    <Label id="signUpLabel" text="New member? Join at reelmotionapp.com" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="1280" translation="[0, 550]" />
+    <Label id="signUpLabel" text="New to ReelMotion?" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="560" translation="[40, 510]" />
+    <Label id="signUpLinkLabel" text="Create an account at reelmotionapp.com" color="#DC2626" font="font:SmallBoldSystemFont" horizAlign="center" width="560" translation="[40, 540]" />
 
-    <!-- Activation code toggle -->
-    <Label id="activationCodeLabel" text="Use activation code instead" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="1280" translation="[0, 630]" />
+    <!-- Spinner / Error -->
+    <BusySpinner id="spinner" translation="[294, 600]" visible="false" />
+    <Label id="errorLabel" text="" color="#DC2626" font="font:SmallSystemFont" horizAlign="center" width="560" translation="[40, 595]" visible="false" wrap="true" />
 
-    <!-- Spinner -->
-    <BusySpinner id="spinner" translation="[624, 480]" visible="false" />
+    <!-- ===================== RIGHT COLUMN: ACTIVATE ===================== -->
 
-    <!-- Error -->
-    <Label id="errorLabel" text="" color="#DC2626" font="font:SmallSystemFont" horizAlign="center" width="1000" translation="[140, 600]" visible="false" wrap="true" />
+    <Label id="activateHeadlineLabel" text="Activate on Your Phone" color="#FFFFFF" font="font:LargeBoldSystemFont" translation="[690, 30]" />
+    <Label id="activateInstrLabel" text="Scan the QR code or visit reelmotionapp.com/activate" color="#9CA3AF" font="font:SmallSystemFont" width="550" wrap="true" translation="[690, 80]" />
+
+    <Poster id="qrPoster" uri="pkg:/images/qr_activate.png" width="220" height="220" translation="[855, 140]" />
+    <Label id="activateUrlLabel" text="reelmotionapp.com/activate" color="#DC2626" font="font:SmallBoldSystemFont" horizAlign="center" width="550" translation="[690, 375]" />
+
+    <Label id="orLabel" text="OR" color="#6B7280" font="font:SmallBoldSystemFont" horizAlign="center" width="550" translation="[690, 420]" />
+    <Label id="codeHeaderLabel" text="Enter Activation Code" color="#9CA3AF" font="font:SmallSystemFont" horizAlign="center" width="550" translation="[690, 455]" />
+
+    <Rectangle id="codeBoxBg" color="#1A0E0E" width="550" height="80" translation="[690, 485]" />
+    <Rectangle id="codeBoxBorder" color="#3F1414" width="550" height="80" translation="[690, 485]" />
+    <Label id="codeLabel" text="" color="#FFFFFF" font="font:LargeBoldSystemFont" horizAlign="center" vertAlign="center" width="550" height="80" translation="[690, 485]" />
+
+    <BusySpinner id="activationSpinner" translation="[940, 590]" visible="true" />
+    <Label id="activationErrorLabel" text="" color="#DC2626" font="font:SmallSystemFont" horizAlign="center" width="550" translation="[690, 590]" visible="false" wrap="true" />
+    <Rectangle id="retryBtnBg" color="#374151" width="300" height="50" translation="[815, 600]" visible="false" />
+    <Rectangle id="retryBtnFocusBorder" color="#FFFFFF" width="300" height="50" translation="[815, 600]" visible="false" />
+    <Label id="retryBtnLabel" text="Get New Code" color="#FFFFFF" font="font:MediumBoldSystemFont" horizAlign="center" vertAlign="center" width="300" height="50" translation="[815, 600]" visible="false" />
   </children>
 </component>
